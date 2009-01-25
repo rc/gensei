@@ -1,9 +1,50 @@
 #!/usr/bin/env python
 from optparse import OptionParser
 import numpy as np
+import pylab as pl
 
 class Object( object ):
-    pass
+    def __contains__( self, point ):
+        return False
+
+
+class Ellipsoid( object ):
+    def __init__( self, semiaxes, centre, rot_axis, rot_angle ):
+        """
+        Parameters:
+
+            semiaxes : (float, float, float)
+                The semiaxes a, b, c of the ellipsoid.
+
+            centre : (float, float, float)
+                The position of the ellipsoid's centre in space.
+
+            rot_axis : (float, float, float)
+                The direction vector of rotation axis defining the orientation
+                in space.
+
+            rot_angle : float
+                The rotation angle around the rotation axis.
+            
+        """
+        self.semiaxes = np.array(semiaxes, dtype=np.float64)
+        self.centre = np.array(centre, dtype=np.float64)
+        self.rot_axis = np.array(rot_axis, dtype=np.float64)
+        self.rot_angle = rot_angle
+
+        self.volume = 4.0 / 3.0 * np.pi * np.prod(self.semiaxes)
+        self.mtx0 = np.diag( 1.0 / (self.semiaxes**2) )
+        # TODO
+        self.mtx = self.mtx0
+        
+    def __contains__( self, point ):
+        """
+        Point x in ellipsoid A <=> x^T A x <= 0.
+        """
+        # TODO: vectorize properly.
+        x = point - self.centre
+        aux = np.dot(x, np.dot(self.mtx, x))
+        return np.where(aux <= 0)[0]
 
 usage = """%prog [options] filename_in"""
 
@@ -65,5 +106,18 @@ def main():
     for ii in xrange( options.n_object ):
         print ii
 
+
+    u = np.linspace(0, 2.0 * np.pi, 100)
+    v = u
+    a = 10.0
+    b = 3.0
+    c = 2.0
+    
+    x = a * np.sin( u ) * np.cos( v )
+    y = b * np.cos( u ) * np.cos( v )
+    z = c * np.sin( v )
+
+    
+    
 if __name__ == "__main__":
     main()
