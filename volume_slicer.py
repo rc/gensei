@@ -3,13 +3,32 @@ from optparse import OptionParser
 import numpy as np
 import pylab as pl
 
-class Object( object ):
-    def __contains__( self, point ):
+def make_axis_rotation_matrix(direction, angle):
+    """
+    angle : a
+    direction : d
+    
+    R = dd^T + cos(a) (I - dd^T) + sin(a) skew(d)
+    """
+    d = np.array(direction, dtype=np.float64)
+    d /= np.linalg.norm(d)
+    
+    eye = np.eye(3, dtype=np.float64)
+    ddt = np.outer(d, d)
+    skew = np.array([[    0,  d[2],  d[1]],
+                     [-d[2],     0,  d[0]],
+                     [-d[1], -d[0],    0]], dtype=np.float64)
+
+    mtx = ddt + np.cos(angle) * (eye - ddt) + np.sin(angle) * skew
+    return mtx
+
+class Object(object):
+    def __contains__(self, point):
         return False
 
 
-class Ellipsoid( object ):
-    def __init__( self, semiaxes, centre, rot_axis, rot_angle ):
+class Ellipsoid(object):
+    def __init__(self, semiaxes, centre, rot_axis, rot_angle):
         """
         Parameters:
 
@@ -34,17 +53,31 @@ class Ellipsoid( object ):
 
         self.volume = 4.0 / 3.0 * np.pi * np.prod(self.semiaxes)
         self.mtx0 = np.diag( 1.0 / (self.semiaxes**2) )
-        # TODO
-        self.mtx = self.mtx0
+
+        self.rot_mtx = make_axis_rotation_matrix(self.rot_axis, self.rot_angle)
+        self.mtx = np.dot(self.rot_mtx.T, np.dot(self.mtx0, self.rot_mtx))
         
     def __contains__( self, point ):
         """
-        Point x in ellipsoid A <=> x^T A x <= 0.
+        Point x in ellipsoid A <=> x^T A x <= 1.
         """
-        # TODO: vectorize properly.
         x = point - self.centre
         aux = np.dot(x, np.dot(self.mtx, x))
-        return np.where(aux <= 0)[0]
+        return aux <= 1.0
+
+    def contains( self, points ):
+        """
+        Point x in ellipsoid A <=> x^T A x <= 1.
+        Works for array of points.
+
+        Parameters:
+            points : (n_point, 3) array
+        """
+        points = np.array(points, ndmin=2, dtype=np.float64)
+        x = points.T - self.centre[:,np.newaxis]
+        aux = np.sum(x * np.dot(self.mtx, x), axis = 0)
+        return np.where(aux <= 1.0, True, False)
+        
 
 usage = """%prog [options] filename_in"""
 
@@ -106,18 +139,36 @@ def main():
     for ii in xrange( options.n_object ):
         print ii
 
+##     el = Ellipsoid((1, 1, 1), (0, 0, 0), (0, 0, 1), 0)
+##     print el.volume
+##     print (0, 0, 0) in el
+##     print (1, 0, 0) in el
+##     print (1.1, 0, 0) in el
 
-    u = np.linspace(0, 2.0 * np.pi, 100)
-    v = u
-    a = 10.0
-    b = 3.0
-    c = 2.0
-    
-    x = a * np.sin( u ) * np.cos( v )
-    y = b * np.cos( u ) * np.cos( v )
-    z = c * np.sin( v )
+    el = Ellipsoid((1.5, 2.3, 1), (-1, 1, 0), (1, 1, 1), np.pi/4)
+    print el.volume
+    print (0, 0, 0) in el
+    print (1, 0, 0) in el
+    print (1.1, 0, 0) in el
+    print el.contains([(0, 0, 0), (1, 0, 0), (1.1, 0, 0), (2, 0, 0)])
 
-    
+    x0 = (0, 0, 0)
+    v1 = (1, 0, 0)
+    v2 = (0, 1, 0)
+
+    xr = np.linspace(-5, 5, 1001)
+    yr = xr
+    x, y = np.meshgrid(xr, yr)
+    z = np.zeros_like( x.flat ) + 0.03
+#    import pdb; pdb.set_trace()
+    points = np.c_[x.ravel(), y.ravel(), z]
+    print points
+    mask = el.contains(points)
+    print mask
+    pl.figure(1)
+    pl.clf()
+    pl.imshow(mask.reshape(1001, 1001))
+    pl.show()
     
 if __name__ == "__main__":
     main()
