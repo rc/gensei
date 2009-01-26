@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 from optparse import OptionParser
 import numpy as np
+from scipy.linalg import eigh, inv
 import pylab as pl
 
 def make_axis_rotation_matrix(direction, angle):
@@ -21,6 +22,10 @@ def make_axis_rotation_matrix(direction, angle):
 
     mtx = ddt + np.cos(angle) * (eye - ddt) + np.sin(angle) * skew
     return mtx
+
+def mtx_to_homogenized( mtx ):
+    zz = np.zeros((3,), dtype=np.float64)
+    return np.r_[np.c_[mtx, zz], [np.r_[zz, 1]]]
 
 class Object(object):
     def __contains__(self, point):
@@ -77,7 +82,19 @@ class Ellipsoid(object):
         x = points.T - self.centre[:,np.newaxis]
         aux = np.sum(x * np.dot(self.mtx, x), axis = 0)
         return np.where(aux <= 1.0, True, False)
-        
+
+    def intersects( self, other ):
+        A = mtx_to_homogenized( self.mtx )
+        B = mtx_to_homogenized( other.mtx )
+        roots = eigh(np.dot(-inv(A), B), eigvals_only=True)
+        print roots
+        if roots[2] > 0:
+            if roots[2] != root[3]:
+                return 2
+            else:
+                return 1
+        else:
+            return 0
 
 usage = """%prog [options] filename_in"""
 
@@ -94,6 +111,8 @@ help = {
     'figure resolution [default: %default]',
     'fraction' :
     'volume fraction of objects [default: %default]',
+    'length_to_width' :
+    'length-to-width ratio of objects [default: %default]',
     'n_object' :
     'number of objects [default: %default]',
 }
@@ -106,21 +125,24 @@ def main():
     parser.add_option("-f", "--format", metavar='format',
                       action="store", dest="output_format",
                       default="png", help=help['output_format'])
-    parser.add_option("-n", "--n-slice", type=int, metavar='n_slice',
+    parser.add_option("-n", "--n-slice", type=int, metavar='int',
                       action="store", dest="n_slice",
                       default=100, help=help['n_slice'])
     parser.add_option("-d", "--dims", metavar='dims',
                       action="store", dest="dims",
                       default='(10, 10, 10)', help=help['n_slice'])
     parser.add_option("-r", "--resolution", metavar='resolution',
-                       action="store", dest="resolution",
-                       default='600x600', help=help['resolution'])
-    parser.add_option("", "--fraction", type=float, metavar='fraction',
-                       action="store", dest="fraction",
-                       default='0.3', help=help['fraction'])
-    parser.add_option("", "--n-object", type=int, metavar='n_object',
-                       action="store", dest="n_object",
-                       default='5', help=help['n_object'])
+                      action="store", dest="resolution",
+                      default='600x600', help=help['resolution'])
+    parser.add_option("", "--fraction", type=float, metavar='float',
+                      action="store", dest="fraction",
+                      default='0.3', help=help['fraction'])
+    parser.add_option("", "--length-to-width", type=float, metavar='float',
+                      action="store", dest="length_to_width",
+                      default='8.0', help=help['length_to_width'])
+    parser.add_option("", "--n-object", type=int, metavar='int',
+                      action="store", dest="n_object",
+                      default='5', help=help['n_object'])
     options, args = parser.parse_args()
 
     options.dims = eval(options.dims)
@@ -136,9 +158,19 @@ def main():
     print 'average object volume [mm^3]: %.2f' % average_object_volume
 
     object_volume = 0.0
+    els = []
     for ii in xrange( options.n_object ):
         print ii
-
+        volume = average_object_volume
+        b = c = np.power(volume / (4.0/3.0 * np.pi * options.length_to_width),
+                         1.0/3.0)
+        a = options.length_to_width * b
+        el = Ellipsoid((a, b, c), (0, 0, 0), (1, 1, 1), np.pi/4)
+        for prev in els:
+            print prev.intersects(el)
+        print 'el:', el.semiaxes, el.volume
+        els.append(el)
+    pause()
 ##     el = Ellipsoid((1, 1, 1), (0, 0, 0), (0, 0, 1), 0)
 ##     print el.volume
 ##     print (0, 0, 0) in el
