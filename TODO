@@ -1,0 +1,1 @@
+- rotated ellipsoid bounding box (min, max x, x^T A x = 1)
