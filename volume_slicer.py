@@ -89,6 +89,14 @@ class Ellipsoid(object):
         self.rot_mtx_hc = make_rotation_matrix_hc(self.rot_mtx)
         self.mtx_hc = self._get_matrix_hc()
 
+    def __str__(self):
+        msg = '%s\n' % object.__str__(self)
+        msg += '    semiaxes: %s\n' % self.semiaxes
+        msg += '    centre: %s\n' % self.centre
+        msg += '    rot. axis: %s\n' % self.rot_axis
+        msg += '    rot. angle: %s' % (self.rot_angle * 180.0 / np.pi)
+        return msg
+
     def _get_matrix_hc( self ):
         """Return:
                mtx_hc : 4 x 4 array
@@ -183,7 +191,7 @@ def main():
                       default="png", help=help['output_format'])
     parser.add_option("-n", "--n-slice", type=int, metavar='int',
                       action="store", dest="n_slice",
-                      default=101, help=help['n_slice'])
+                      default=21, help=help['n_slice'])
     parser.add_option("-d", "--dims", metavar='dims',
                       action="store", dest="dims",
                       default='(10, 10, 10)', help=help['n_slice'])
@@ -192,13 +200,13 @@ def main():
                       default='600x600', help=help['resolution'])
     parser.add_option("", "--fraction", type=float, metavar='float',
                       action="store", dest="fraction",
-                      default='0.3', help=help['fraction'])
+                      default='0.1', help=help['fraction'])
     parser.add_option("", "--length-to-width", type=float, metavar='float',
                       action="store", dest="length_to_width",
                       default='8.0', help=help['length_to_width'])
     parser.add_option("", "--n-object", type=int, metavar='int',
                       action="store", dest="n_object",
-                      default='5', help=help['n_object'])
+                      default='10', help=help['n_object'])
     options, args = parser.parse_args()
 
     options.dims = eval(options.dims)
@@ -226,7 +234,8 @@ def main():
     print 'total volume [mm^3]: %.2f' % total_volume
     print 'total object volume [mm^3]: %.2f' % total_object_volume
     print 'average object volume [mm^3]: %.2f' % average_object_volume
-    raw_input()
+    raw_input( """>>> press <Enter> to generate objects
+if it takes too long, press <Ctrl-C> and retry with different parameters""" )
 
     object_volume = 0.0
     els = []
@@ -237,26 +246,29 @@ def main():
             # Ensure the whole ellipsoid in the box. 
             centre = get_random(rbox) + semiaxes[0]
             axis = get_random((1.0, 1.0, 1.0))
-            angle = get_random(np.pi/2)
-            print 'centre:', centre
-            print 'rot. axis, angle:', axis, angle
+            angle = get_random(np.pi)
+##             print 'centre:', centre
+##             print 'rot. axis, angle:', axis, angle
+#            el = Ellipsoid(semiaxes, centre, (0,0,1), 135*np.pi/180)
             el = Ellipsoid(semiaxes, centre, axis, angle)
             for ip, prev in enumerate(els):
                 bad = prev.intersects(el)
-                print '%d. intersects: %d' % (ip, bad)
+##                 print '%d. intersects: %d' % (ip, bad)
                 if bad:
                     break
             else:
-                print 'ok'
+##                 print 'ok'
                 break
 
-        print 'accepted el:', el.semiaxes, el.volume
+        print 'accepted:', el
         els.append(el)
 
         object_volume += el.volume
     print 'object volume error:', abs( total_object_volume - object_volume )
 
     output_dir = os.path.dirname(options.output_filename_trunk)
+    raw_input( """>>> press <Enter> to save slices in '%s'
+all files in that directory will be deleted""" % output_dir )
     if not os.path.exists(output_dir):
         os.makedirs(output_dir)
     else:
@@ -269,13 +281,20 @@ def main():
     xb = np.linspace(0, box_dims[0], options.resolution[0])
     yb = np.linspace(0, box_dims[1], options.resolution[1])
     zb = np.linspace(0, box_dims[2], options.n_slice)
+    if options.n_slice > 1:
+        dz = zb[1] - zb[0]
+    else:
+        dz = 0.0
     x, y = np.meshgrid(xb, yb)
     x = x.ravel()
     y = y.ravel()
     z = np.empty_like( x.flat )
 
     for iz, zb1 in enumerate(zb):
-        print iz, zb1
+        zb_name = ('%05.2f' % zb1).replace('.', '_')
+        filename = '.'.join((options.output_filename_trunk,
+                             suffix % iz, zb_name, options.output_format))
+        print iz, zb1, filename
         z.fill(zb1)
         points = np.c_[x, y, z]
 
@@ -288,11 +307,23 @@ def main():
         pl.imshow(mask.reshape(options.resolution), origin='upper')
         pl.axis('off')
 
-        zb_name = ('%05.2f' % zb1).replace('.', '_')
-        filename = '.'.join((options.output_filename_trunk,
-                             suffix % iz, zb_name, options.output_format))
         pl.savefig(filename, format=options.output_format)
 ##        pl.show()
+
+    reportname = options.output_filename_trunk + '_info.txt'
+    print 'saving report to %s...' % reportname
+    fd = open(reportname, 'w')
+    fd.write('dimensions of specimen [mm]: (%f, %f, %f)\n' % options.dims)
+    fd.write('volume of specimen [mm^3]: %f\n' % total_volume)
+    fd.write('number of slices: %d\n' % options.n_slice)
+    fd.write('slice distance [mm]: %f\n' % dz)
+    fd.write('%d objects (ellipsiods):\n' % options.n_object)
+    fd.write('  volume fraction: %f\n' % options.fraction)
+    fd.write('  total volume [mm^3]: %f\n' % total_object_volume)
+    fd.write('  average volume [mm^3]: %f\n' % average_object_volume)
+    fd.write('  length-to-width ratio: %f\n' % options.length_to_width)
+    fd.close()
+    print 'done.'
     
 if __name__ == "__main__":
     main()
