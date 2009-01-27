@@ -72,7 +72,6 @@ class Ellipsoid(object):
             
         """
         self.semiaxes = np.array(semiaxes, dtype=np.float64)
-        self.centre = np.array(centre, dtype=np.float64)
         self.rot_axis = np.array(rot_axis, dtype=np.float64)
         self.rot_angle = rot_angle
 
@@ -83,6 +82,11 @@ class Ellipsoid(object):
         self.mtx = np.dot(self.rot_mtx.T, np.dot(self.mtx0, self.rot_mtx))
 
         self.rot_mtx_hc = make_rotation_matrix_hc(self.rot_mtx)
+
+        self.set_centre(centre)
+
+    def set_centre(self, centre):
+        self.centre = np.array(centre, dtype=np.float64)
         self.mtx_hc = self._get_matrix_hc()
 
     def __str__(self):
@@ -115,6 +119,14 @@ class Ellipsoid(object):
 ##         print mtx_hc
         
         return mtx_hc
+
+    def get_origin_bounding_box(self):
+        """Return:
+               bbox : 3 x 2 array
+                   The bounding box of the ellipsoid placed in the origin.
+        """
+        aux = np.sqrt(np.diag(inv(self.mtx)))[:,np.newaxis]
+        return np.c_[-aux, aux]
 
     def __contains__( self, point ):
         """
@@ -171,6 +183,8 @@ help = {
     'figure resolution [default: %default]',
     'fraction' :
     'volume fraction of objects [default: %default]',
+    'fraction_reduction' :
+    'volume fraction reduction factor [default: %default]',
     'length_to_width' :
     'length-to-width ratio of objects [default: %default]',
     'n_object' :
@@ -197,6 +211,9 @@ def main():
     parser.add_option("", "--fraction", type=float, metavar='float',
                       action="store", dest="fraction",
                       default='0.1', help=help['fraction'])
+    parser.add_option("", "--fraction-reduction", type=float, metavar='float',
+                      action="store", dest="fraction_reduction",
+                      default='0.9', help=help['fraction_reduction'])
     parser.add_option("", "--length-to-width", type=float, metavar='float',
                       action="store", dest="length_to_width",
                       default='8.0', help=help['length_to_width'])
@@ -210,7 +227,6 @@ def main():
     print options
 
     total_volume = np.prod(options.dims)
-    ok = 0
     while 1:
         total_object_volume = options.fraction * total_volume
         average_object_volume = total_object_volume / options.n_object
@@ -220,12 +236,10 @@ def main():
         print 'fraction: %s, major semiaxis: %s' % (options.fraction,
                                                     semiaxes[0])
         box_dims = np.array(options.dims, dtype=np.float64)
-        rbox = box_dims - 2.0 * semiaxes[0]
-        if ok: # postpone one iteration
+        rbox_conservative = box_dims - 2.0 * semiaxes[0]
+        if np.alltrue(rbox_conservative > 0):
             break
-        if np.alltrue(rbox > 0):
-            ok = 1
-        options.fraction *= 0.5
+        options.fraction *= options.fraction_reduction
 
     print 'total volume [mm^3]: %.2f' % total_volume
     print 'total object volume [mm^3]: %.2f' % total_object_volume
@@ -240,13 +254,17 @@ if it takes too long, press <Ctrl-C> and retry with different parameters""" )
 
         while 1:
             # Ensure the whole ellipsoid in the box. 
-            centre = get_random(rbox) + semiaxes[0]
             axis = get_random((1.0, 1.0, 1.0))
             angle = get_random(np.pi)
+            el = Ellipsoid(semiaxes, (0.0, 0.0, 0.0), axis, angle)
+            bbox = el.get_origin_bounding_box()
+##             print bbox
+            rbox = box_dims - 2 * bbox[:,1]
+            centre = get_random(rbox) + bbox[:,1]
+            el.set_centre(centre)
 ##             print 'centre:', centre
 ##             print 'rot. axis, angle:', axis, angle
 #            el = Ellipsoid(semiaxes, centre, (0,0,1), 135*np.pi/180)
-            el = Ellipsoid(semiaxes, centre, axis, angle)
             for ip, prev in enumerate(els):
                 bad = prev.intersects(el)
 ##                 print '%d. intersects: %d' % (ip, bad)
@@ -291,6 +309,7 @@ all files in that directory will be deleted""" % output_dir )
         filename = '.'.join((options.output_filename_trunk,
                              suffix % iz, zb_name, options.output_format))
         print iz, zb1, filename
+        print 'computing...'
         z.fill(zb1)
         points = np.c_[x, y, z]
 
@@ -298,12 +317,15 @@ all files in that directory will be deleted""" % output_dir )
         for el in els:
             mask += el.contains(points)
 
+        print 'drawing...'
         pl.figure(1)
         pl.clf()
         pl.imshow(mask.reshape(options.resolution), origin='upper')
         pl.axis('off')
 
+        print 'saving...'
         pl.savefig(filename, format=options.output_format)
+        print 'done.'
 ##        pl.show()
 
     reportname = options.output_filename_trunk + '_info.txt'
