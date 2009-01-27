@@ -52,10 +52,6 @@ def get_suffix( n ):
         suffix = '%d'
     return suffix
 
-class Object(object):
-    def __contains__(self, point):
-        return False
-
 class Ellipsoid(object):
     def __init__(self, semiaxes, centre, rot_axis, rot_angle):
         """
