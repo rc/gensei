@@ -7,10 +7,15 @@ import pylab as pl
 
 def make_axis_rotation_matrix(direction, angle):
     """
-    angle : a
-    direction : d
-
+    Create a rotation matrix corresponding to the rotation around a general
+    axis by a specified angle.
+    
     R = dd^T + cos(a) (I - dd^T) + sin(a) skew(d)
+    
+    Parameters:
+    
+        angle : float a
+        direction : array d
     """
     d = np.array(direction, dtype=np.float64)
     d /= np.linalg.norm(d)
@@ -25,26 +30,58 @@ def make_axis_rotation_matrix(direction, angle):
     return mtx
 
 def make_rotation_matrix_hc(mtx):
+    """Extend a rotation matrix to homogenous coordinates.
+
+    R_hc = [[R, 0],
+            [0, 1]]
+
+    Parameters:
+
+        mtx : 3 x 3 array R
+    """
     zz = np.zeros((3,), dtype=np.float64)
     mtx = np.r_[np.c_[mtx, zz], [np.r_[zz, 1]]]
     return mtx
 
 def make_translation_matrix_hc(point):
+    """Create a matrix whose application corresponds to translation to the
+    point in homogenous coordinates.
+
+    T_hc = [[1, 0, 0, x],
+            [0, 1, 0, y],
+            [0, 0, 1, z],
+            [0, 0, 0, 1]]
+
+    Parameters:
+
+        point : array (x, y, z)
+    """
     mtx = np.eye(4, dtype=np.float64)
     mtx[:-1,3] = point
     return mtx
 
 def get_random(ranges):
+    """Get an array of random numbers 0 <= a_i < ranges[i]."""
     ranges = np.atleast_1d(ranges)
     return ranges * np.random.random(len(ranges))
 
 def get_average_semiaxes(volume, length_to_width):
+    """Get semiaxes of an ellipsoid given its volume and length-to-width
+    ratio."""
     b = c = np.power(volume / (4.0/3.0 * np.pi * length_to_width),
                      1.0/3.0)
     a = length_to_width * b
     return a, b, c
 
 def get_suffix( n ):
+    """Get suffix format string given a number of files.
+    
+    Examples:
+
+        n = 5 -> '%01d'
+        n = 15 -> '%02d'
+        n = 1005 -> '%04d'
+    """
     if n > 1:
         n_digit = int( np.log10( n - 1 ) + 1 )
         suffix = '%%0%dd' % n_digit
@@ -86,6 +123,8 @@ class Ellipsoid(object):
         self.set_centre(centre)
 
     def set_centre(self, centre):
+        """Set the ellipsoid's centre and update its description matrix in
+        homogenous coordinates."""
         self.centre = np.array(centre, dtype=np.float64)
         self.mtx_hc = self._get_matrix_hc()
 
@@ -156,6 +195,14 @@ class Ellipsoid(object):
         return mask
 
     def intersects( self, other ):
+        """Test if two ellipsoids self and other intersect.
+
+        Return:
+            value : int
+                0 -> the ellipsoids are disjoint
+                1 -> touch in a single surface point
+                2 -> have common inner points
+        """
         A, B = self.mtx_hc, other.mtx_hc
         eigs = eig(np.dot(-inv(A), B), left=False, right=False).real
         roots = np.sort(eigs)
@@ -226,6 +273,8 @@ def main():
     options.resolution = [int( r ) for r in  options.resolution.split('x')]
     print options
 
+    # Adjust the volume fraction of ellipsoids so that they fit in the
+    # specimen's block.
     total_volume = np.prod(options.dims)
     while 1:
         total_object_volume = options.fraction * total_volume
@@ -247,6 +296,8 @@ def main():
     raw_input( """>>> press <Enter> to generate objects
 if it takes too long, press <Ctrl-C> and retry with different parameters""" )
 
+    # Generate non-intersecting ellipsoids fully contained in the specimen's
+    # block.
     object_volume = 0.0
     els = []
     for ii in xrange( options.n_object ):
@@ -283,6 +334,7 @@ if it takes too long, press <Ctrl-C> and retry with different parameters""" )
     output_dir = os.path.dirname(options.output_filename_trunk)
     raw_input( """>>> press <Enter> to save slices in '%s'
 all files in that directory will be deleted""" % output_dir )
+
     if not os.path.exists(output_dir):
         os.makedirs(output_dir)
     else:
@@ -291,7 +343,7 @@ all files in that directory will be deleted""" % output_dir )
             os.remove(name)
     suffix = get_suffix(options.n_slice)
 
-    # All points in the box.
+    # All points in the block.
     xb = np.linspace(0, box_dims[0], options.resolution[0])
     yb = np.linspace(0, box_dims[1], options.resolution[1])
     zb = np.linspace(0, box_dims[2], options.n_slice)
@@ -304,6 +356,9 @@ all files in that directory will be deleted""" % output_dir )
     y = y.ravel()
     z = np.empty_like( x.flat )
 
+    # Save images of the specimen slices along the z axis of the block. Each
+    # image displays a planar cut plane of the block intersecting the
+    # ellipsoids.
     for iz, zb1 in enumerate(zb):
         zb_name = ('%05.2f' % zb1).replace('.', '_')
         filename = '.'.join((options.output_filename_trunk,
@@ -328,6 +383,7 @@ all files in that directory will be deleted""" % output_dir )
         print 'done.'
 ##        pl.show()
 
+    # Save the statistics to a text file.
     reportname = options.output_filename_trunk + '_info.txt'
     print 'saving report to %s...' % reportname
     fd = open(reportname, 'w')
