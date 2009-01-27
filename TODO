@@ -1,2 +1,2 @@
 - speed-up ellipsoid-plane intersection generation
-- obey resolution option when saving (use PIL directly?)
+

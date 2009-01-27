@@ -367,6 +367,13 @@ all files in that directory will be deleted""" % output_dir )
     # Save images of the specimen slices along the z axis of the block. Each
     # image displays a planar cut plane of the block intersecting the
     # ellipsoids.
+    imshape = options.resolution[::-1]
+    aspect = float(options.resolution[1]) / options.resolution[0]
+    figsize = pl.figaspect(aspect)
+    dpi = options.resolution[0] / figsize[0]
+
+    pl.figure(1, figsize=figsize, dpi=dpi)
+    ax = pl.gcf().add_axes([0, 0, 1, 1])
     for iz, zb1 in enumerate(zb):
         zb_name = ('%05.2f' % zb1).replace('.', '_')
         filename = '.'.join((options.output_filename_trunk,
@@ -381,13 +388,12 @@ all files in that directory will be deleted""" % output_dir )
             mask += el.contains(points)
 
         print 'drawing...'
-        pl.figure(1)
-        pl.clf()
-        pl.imshow(mask.reshape(options.resolution), origin='upper')
-        pl.axis('off')
+        ax.cla()
+        ax.set_axis_off()
+        ax.imshow(mask.reshape(imshape), origin='upper')
 
         print 'saving...'
-        pl.savefig(filename, format=options.output_format)
+        pl.savefig(filename, format=options.output_format, dpi=dpi)
         print 'done.'
 ##        pl.show()
 
