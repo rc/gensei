@@ -221,11 +221,14 @@ help = {
     'filename' :
     'basename of output file(s) [default: %default]',
     'output_format' :
-    'output file format, one of: {png, jpg} [default: %default]',
+    'output file format (supported by the matplotlib backend used) '\
+    '[default: %default]',
     'n_slice' :
     'number of slices to generate [default: %default]',
     'dims' :
-    'dimensions of specimen in milimetres [default: %default]',
+    'dimensions of specimen in units given by --units [default: %default]',
+    'units' :
+    'length units to use [default: %default]',
     'resolution' :
     'figure resolution [default: %default]',
     'fraction' :
@@ -251,7 +254,10 @@ def main():
                       default=21, help=help['n_slice'])
     parser.add_option("-d", "--dims", metavar='dims',
                       action="store", dest="dims",
-                      default='(10, 10, 10)', help=help['n_slice'])
+                      default='(10, 10, 10)', help=help['dims'])
+    parser.add_option("-u", "--units", metavar='units',
+                      action="store", dest="units",
+                      default='mm', help=help['units'])
     parser.add_option("-r", "--resolution", metavar='resolution',
                       action="store", dest="resolution",
                       default='600x600', help=help['resolution'])
@@ -290,9 +296,11 @@ def main():
             break
         options.fraction *= options.fraction_reduction
 
-    print 'total volume [mm^3]: %.2f' % total_volume
-    print 'total object volume [mm^3]: %.2f' % total_object_volume
-    print 'average object volume [mm^3]: %.2f' % average_object_volume
+    print 'total volume [(%s)^3]: %.2f' % (options.units, total_volume)
+    print 'total object volume [(%s)^3]: %.2f' % (options.units,
+                                                  total_object_volume)
+    print 'average object volume [(%s)^3]: %.2f' % (options.units,
+                                                    average_object_volume)
     raw_input( """>>> press <Enter> to generate objects
 if it takes too long, press <Ctrl-C> and retry with different parameters""" )
 
@@ -387,15 +395,19 @@ all files in that directory will be deleted""" % output_dir )
     reportname = options.output_filename_trunk + '_info.txt'
     print 'saving report to %s...' % reportname
     fd = open(reportname, 'w')
-    fd.write('dimensions of specimen [mm]: (%f, %f, %f)\n' % options.dims)
-    fd.write('volume of specimen [mm^3]: %f\n' % total_volume)
+    fd.write('dimensions of specimen [%s]: (%f, %f, %f)\n' %\
+             ((options.units,) + options.dims))
+    fd.write('volume of specimen [(%s)^3]: %f\n' % (options.units, total_volume))
     fd.write('number of slices: %d\n' % options.n_slice)
-    fd.write('slice distance [mm]: %f\n' % dz)
+    fd.write('slice distance [%s]: %f\n' % (options.units, dz))
     fd.write('%d objects (ellipsiods):\n' % options.n_object)
     fd.write('  volume fraction: %f\n' % options.fraction)
-    fd.write('  total volume [mm^3]: %f\n' % total_object_volume)
-    fd.write('  average volume [mm^3]: %f\n' % average_object_volume)
+    fd.write('  total volume [(%s)^3]: %f\n' % (options.units,
+                                                total_object_volume))
+    fd.write('  average volume [(%s)^3]: %f\n' % (options.units,
+                                                  average_object_volume))
     fd.write('  length-to-width ratio: %f\n' % options.length_to_width)
+    fd.write('  semiaxes [%s]: (%f, %f, %f)\n' % ((options.units,) + semiaxes))
     fd.close()
     print 'done.'
     
