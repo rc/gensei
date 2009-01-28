@@ -1,3 +1,5 @@
-slices/
+# Ignore all subdirs.
+*/*
+
 *.png
 *.jpg
