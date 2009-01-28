@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-import os, glob
+import os, glob, copy, time
 from optparse import OptionParser
 import numpy as np
 from scipy.linalg import eig, inv
@@ -88,6 +88,36 @@ def get_suffix( n ):
     else:
         suffix = '%d'
     return suffix
+
+def format_dict(d, raw=None, indent=2):
+    """Format a dictionary for printing.
+
+    Parameters:
+
+        d : dict
+            The dictionary.
+
+        raw : dict
+            The raw (unadjusted) dictionary to compare with.
+
+        indent : int
+            The indentation level.
+
+    Return:
+
+        msg : string
+           The string with dictionary's key : val formatted in two columns.
+    """
+    if raw is None:
+        raw = d
+        
+    msg = ''
+    for key, val in d.iteritems():
+        if val == raw[key]:
+            msg += (' ' * indent) + ('%s : %s\n' % (key, val))
+        else:
+            msg += (' ' * indent) + ('%s : %s (%s)\n' % (key, val, raw[key]))
+    return msg
 
 class Ellipsoid(object):
     def __init__(self, semiaxes, centre, rot_axis, rot_angle):
@@ -242,6 +272,8 @@ help = {
 }
 
 def main():
+    time_start = time.time()
+
     parser = OptionParser(usage=usage, version="%prog ")
     parser.add_option("-o", "", metavar='filename',
                       action="store", dest="output_filename_trunk",
@@ -278,6 +310,8 @@ def main():
     options.dims = eval(options.dims)
     options.resolution = [int( r ) for r in  options.resolution.split('x')]
     print options
+
+    orig_options = copy.deepcopy(options.__dict__)
 
     # Adjust the volume fraction of ellipsoids so that they fit in the
     # specimen's block.
@@ -397,10 +431,15 @@ all files in that directory will be deleted""" % output_dir )
         print 'done.'
 ##        pl.show()
 
+    time_end = time.time()
+
     # Save the statistics to a text file.
     reportname = options.output_filename_trunk + '_info.txt'
     print 'saving report to %s...' % reportname
     fd = open(reportname, 'w')
+    fd.write('started: %s\n' % time.ctime(time_start))
+    fd.write('elapsed: %.1f [s]\n' % (time_end - time_start))
+    fd.write('-'*50 + '\n')
     fd.write('dimensions of specimen [%s]: (%f, %f, %f)\n' %\
              ((options.units,) + options.dims))
     fd.write('volume of specimen [(%s)^3]: %f\n' % (options.units, total_volume))
@@ -414,6 +453,9 @@ all files in that directory will be deleted""" % output_dir )
                                                   average_object_volume))
     fd.write('  length-to-width ratio: %f\n' % options.length_to_width)
     fd.write('  semiaxes [%s]: (%f, %f, %f)\n' % ((options.units,) + semiaxes))
+    fd.write('-'*50 + '\n')
+    fd.write('run with adjusted (raw) options:\n')
+    fd.write(format_dict(options.__dict__, raw=orig_options))
     fd.close()
     print 'done.'
     
