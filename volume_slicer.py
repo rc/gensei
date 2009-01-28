@@ -73,7 +73,7 @@ def get_average_semiaxes(volume, length_to_width):
     a = length_to_width * b
     return a, b, c
 
-def get_suffix( n ):
+def get_suffix(n):
     """Get suffix format string given a number of files.
     
     Examples:
@@ -83,7 +83,7 @@ def get_suffix( n ):
         n = 1005 -> '%04d'
     """
     if n > 1:
-        n_digit = int( np.log10( n - 1 ) + 1 )
+        n_digit = int(np.log10(n - 1) + 1)
         suffix = '%%0%dd' % n_digit
     else:
         suffix = '%d'
@@ -143,7 +143,7 @@ class Ellipsoid(object):
         self.rot_angle = rot_angle
 
         self.volume = 4.0 / 3.0 * np.pi * np.prod(self.semiaxes)
-        self.mtx0 = np.diag( 1.0 / (self.semiaxes**2) )
+        self.mtx0 = np.diag(1.0 / (self.semiaxes**2))
 
         self.rot_mtx = make_axis_rotation_matrix(self.rot_axis, self.rot_angle)
         self.mtx = np.dot(self.rot_mtx.T, np.dot(self.mtx0, self.rot_mtx))
@@ -166,7 +166,7 @@ class Ellipsoid(object):
         msg += '    rot. angle: %s' % (self.rot_angle * 180.0 / np.pi)
         return msg
 
-    def _get_matrix_hc( self ):
+    def _get_matrix_hc(self):
         """Return:
                mtx_hc : 4 x 4 array
                    The matrix describing the ellipsoid in homogenous
@@ -197,7 +197,7 @@ class Ellipsoid(object):
         aux = np.sqrt(np.diag(inv(self.mtx)))[:,np.newaxis]
         return np.c_[-aux, aux]
 
-    def __contains__( self, point ):
+    def __contains__(self, point):
         """
         Point x in ellipsoid A <=> x^T A x <= 1.
         """
@@ -205,7 +205,7 @@ class Ellipsoid(object):
         aux = np.dot(x, np.dot(self.mtx, x))
         return aux <= 1.0
 
-    def contains( self, points ):
+    def contains(self, points):
         """
         Point x in ellipsoid A <=> x^T A x <= 1.
         Works for array of points.
@@ -224,7 +224,7 @@ class Ellipsoid(object):
         
         return mask
 
-    def intersects( self, other ):
+    def intersects(self, other):
         """Test if two ellipsoids self and other intersect.
 
         Return:
@@ -308,7 +308,7 @@ def main():
     options, args = parser.parse_args()
 
     options.dims = eval(options.dims)
-    options.resolution = [int( r ) for r in  options.resolution.split('x')]
+    options.resolution = [int(r) for r in  options.resolution.split('x')]
     print options
 
     orig_options = copy.deepcopy(options.__dict__)
@@ -335,14 +335,14 @@ def main():
                                                   total_object_volume)
     print 'average object volume [(%s)^3]: %.2f' % (options.units,
                                                     average_object_volume)
-    raw_input( """>>> press <Enter> to generate objects
-if it takes too long, press <Ctrl-C> and retry with different parameters""" )
+    raw_input(""">>> press <Enter> to generate objects
+if it takes too long, press <Ctrl-C> and retry with different parameters""")
 
     # Generate non-intersecting ellipsoids fully contained in the specimen's
     # block.
     object_volume = 0.0
     els = []
-    for ii in xrange( options.n_object ):
+    for ii in xrange(options.n_object):
         print ('\n*** %d ' % ii) + 70*'*' + '\n'
 
         while 1:
@@ -371,11 +371,11 @@ if it takes too long, press <Ctrl-C> and retry with different parameters""" )
         els.append(el)
 
         object_volume += el.volume
-    print 'object volume error:', abs( total_object_volume - object_volume )
+    print 'object volume error:', abs(total_object_volume - object_volume)
 
     output_dir = os.path.dirname(options.output_filename_trunk)
-    raw_input( """>>> press <Enter> to save slices in '%s'
-all files in that directory will be deleted""" % output_dir )
+    raw_input(""">>> press <Enter> to save slices in '%s'
+all files in that directory will be deleted""" % output_dir)
 
     if not os.path.exists(output_dir):
         os.makedirs(output_dir)
@@ -396,7 +396,7 @@ all files in that directory will be deleted""" % output_dir )
     x, y = np.meshgrid(xb, yb)
     x = x.ravel()
     y = y.ravel()
-    z = np.empty_like( x.flat )
+    z = np.empty_like(x.flat)
 
     # Save images of the specimen slices along the z axis of the block. Each
     # image displays a planar cut plane of the block intersecting the
