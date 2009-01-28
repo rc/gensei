@@ -269,6 +269,9 @@ help = {
     'length-to-width ratio of objects [default: %default]',
     'n_object' :
     'number of objects [default: %default]',
+    'timeout' :
+    'timeout in seconds for attempts to place more ellipsiods into '\
+    'the block [default: %default]',
 }
 
 def main():
@@ -305,6 +308,9 @@ def main():
     parser.add_option("", "--n-object", type=int, metavar='int',
                       action="store", dest="n_object",
                       default='10', help=help['n_object'])
+    parser.add_option("-t", "--timeout", type=float, metavar='float',
+                      action="store", dest="timeout",
+                      default='5.0', help=help['timeout'])
     options, args = parser.parse_args()
 
     options.dims = eval(options.dims)
@@ -345,7 +351,16 @@ if it takes too long, press <Ctrl-C> and retry with different parameters""")
     for ii in xrange(options.n_object):
         print ('\n*** %d ' % ii) + 70*'*' + '\n'
 
+        t0 = time.clock()
+        ok = True
         while 1:
+            if (time.clock() - t0) > options.timeout:
+                print 'timeout!'
+                print '-> try reducing --fraction'
+                print '   or adjusting --length-to-width, --n-object,'\
+                      ' --timeout options'
+                ok = False
+                break
             # Ensure the whole ellipsoid in the box. 
             axis = get_random((1.0, 1.0, 1.0))
             angle = get_random(np.pi)
@@ -367,11 +382,15 @@ if it takes too long, press <Ctrl-C> and retry with different parameters""")
 ##                 print 'ok'
                 break
 
-        print 'accepted:', el
-        els.append(el)
+        if ok:
+            print 'accepted:', el
+            els.append(el)
+            object_volume += el.volume
+        else:
+            break
 
-        object_volume += el.volume
-    print 'object volume error:', abs(total_object_volume - object_volume)
+    total_volume_error = abs(total_object_volume - object_volume)
+    print 'total volume error:', total_volume_error
 
     output_dir = os.path.dirname(options.output_filename_trunk)
     raw_input(""">>> press <Enter> to save slices in '%s'
@@ -445,10 +464,13 @@ all files in that directory will be deleted""" % output_dir)
     fd.write('volume of specimen [(%s)^3]: %f\n' % (options.units, total_volume))
     fd.write('number of slices: %d\n' % options.n_slice)
     fd.write('slice distance [%s]: %f\n' % (options.units, dz))
-    fd.write('%d objects (ellipsiods):\n' % options.n_object)
+    fd.write('%d (required: %d) objects (ellipsiods):\n' % (len(els),
+                                                            options.n_object))
     fd.write('  volume fraction: %f\n' % options.fraction)
     fd.write('  total volume [(%s)^3]: %f\n' % (options.units,
                                                 total_object_volume))
+    fd.write('  total volume error [(%s)^3]: %f\n' % (options.units,
+                                                      total_volume_error))
     fd.write('  average volume [(%s)^3]: %f\n' % (options.units,
                                                   average_object_volume))
     fd.write('  length-to-width ratio: %f\n' % options.length_to_width)
