@@ -119,6 +119,14 @@ def format_dict(d, raw=None, indent=2):
             msg += (' ' * indent) + ('%s : %s (%s)\n' % (key, val, raw[key]))
     return msg
 
+def transform_to_pixels(coors, max_coors, resolution):
+    """
+    Transform real coordinates (in [0, max_coors]) to pixel coordinates, given
+    the figure resolution and max. coordinates (block dimensions).
+    """
+    pc = np.asarray(resolution)[np.newaxis,:] * coors / max_coors[np.newaxis,:]
+    return pc.astype(np.int32)
+
 class Ellipsoid(object):
     def __init__(self, semiaxes, centre, rot_axis, rot_angle):
         """
