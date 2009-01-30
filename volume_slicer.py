@@ -175,7 +175,11 @@ class Ellipsoid(object):
         return msg
 
     def _get_matrix_hc(self):
-        """Return:
+        """
+        Get the matrix describing the ellipsoid in homogenous coordinates.
+        It incorporates both the rotation and translation.
+        
+        Return:
                mtx_hc : 4 x 4 array
                    The matrix describing the ellipsoid in homogenous
                    coordinates.
@@ -198,12 +202,26 @@ class Ellipsoid(object):
         return mtx_hc
 
     def get_origin_bounding_box(self):
-        """Return:
-               bbox : 3 x 2 array
-                   The bounding box of the ellipsoid placed in the origin.
+        """
+        Get the ellipsoid's bounding box as if centered at the origin.
+        
+        Return:
+            bbox : 3 x 2 array
+                The bounding box.
         """
         aux = np.sqrt(np.diag(inv(self.mtx)))[:,np.newaxis]
         return np.c_[-aux, aux]
+
+    def get_bounding_box(self):
+        """
+        Get the ellipsoid's bounding box.
+        
+        Return:
+            bbox : 3 x 2 array
+                The bounding box.
+        """
+        obb = self.get_origin_bounding_box()
+        return obb + self.centre[:,np.newaxis]
 
     def __contains__(self, point):
         """
@@ -444,9 +462,33 @@ all files in that directory will be deleted""" % output_dir)
         z.fill(zb1)
         points = np.c_[x, y, z]
 
+##         mask = np.zeros(points.shape[0], dtype=np.int32)
+##         for el in els:
+## #            tt = time.clock()
+##             mask += el.contains(points)
+## #            print time.clock() - tt
+## #        mask2 = mask
+
         mask = np.zeros(points.shape[0], dtype=np.int32)
         for el in els:
-            mask += el.contains(points)
+##             tt = time.clock()
+##             bbox = el.get_bounding_box()
+##             ii = np.where((x > bbox[0,0]) & (x < bbox[0,1])
+##                           & (y > bbox[1,0]) & (y < bbox[1,1]))[0]
+##             ii2 = ii
+##             print '*', time.clock() - tt
+##             tt = time.clock()
+            bbox = el.get_bounding_box()
+            ix = np.where((xb > bbox[0,0]) & (xb < bbox[0,1]))[0]
+            iy = np.where((yb > bbox[1,0]) & (yb < bbox[1,1]))[0]
+            a, b = np.meshgrid(ix, options.resolution[0]*iy)
+            ii = (a + b).ravel()
+##             print time.clock() - tt
+
+##             tt = time.clock()
+            mask[ii] += el.contains(points[ii])
+##             print time.clock() - tt
+#        print np.alltrue(mask==mask2)
 
         print 'drawing...'
         ax.cla()
