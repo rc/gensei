@@ -127,7 +127,37 @@ def transform_to_pixels(coors, max_coors, resolution):
     pc = np.asarray(resolution)[np.newaxis,:] * coors / max_coors[np.newaxis,:]
     return pc.astype(np.int32)
 
-class Ellipsoid(object):
+class Object(object):
+
+    def __str__(self):
+        msg = ['%s' % object.__str__(self)]
+
+        keys = self.traits.keys()
+        order = np.argsort(keys)
+        for ii in order:
+            key = keys[ii]
+            val = self.traits[key]
+
+            if isinstance(val, tuple):
+                tr = val[1]
+                attr = val[0] % tr(getattr(self, key))
+            else:
+                attr = val % getattr(self, key)
+            msg.append(attr)
+
+        return '\n'.join(msg)
+
+    def __repr__(self):
+        msg = ['%s' % object.__str__(self)]
+
+class Ellipsoid(Object):
+    traits = {
+        'semiaxes' : 'semiaxes: %s',
+        'centre' : 'centre: %s',
+        'rot_axis' : 'rot. axis: %s',
+        'rot_angle' : ('rot. angle: %s', lambda x: x * 180.0 / np.pi),
+    }
+
     def __init__(self, semiaxes, centre, rot_axis, rot_angle):
         """
         Parameters:
@@ -165,14 +195,6 @@ class Ellipsoid(object):
         homogenous coordinates."""
         self.centre = np.array(centre, dtype=np.float64)
         self.mtx_hc = self._get_matrix_hc()
-
-    def __str__(self):
-        msg = '%s\n' % object.__str__(self)
-        msg += '    semiaxes: %s\n' % self.semiaxes
-        msg += '    centre: %s\n' % self.centre
-        msg += '    rot. axis: %s\n' % self.rot_axis
-        msg += '    rot. angle: %s' % (self.rot_angle * 180.0 / np.pi)
-        return msg
 
     def _get_matrix_hc(self):
         """
