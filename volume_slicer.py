@@ -9,7 +9,7 @@ from gensei import Ellipsoid
 from gensei.utils import get_random, get_suffix, format_dict
 from gensei.geometry import get_average_semiaxes
 
-usage = """%prog [options] filename_in"""
+usage = """%prog [options] filename"""
 
 help = {
     'filename' :
@@ -76,6 +76,16 @@ def main():
                       action="store", dest="timeout",
                       default='5.0', help=help['timeout'])
     options, args = parser.parse_args()
+
+    if len(args) == 1:
+        filename = args[0]
+    else:
+        parser.print_help(),
+        return
+
+    config = Config.from_file(filename, required=['objects', 'box'],
+                              optional=['options'])
+    print config
 
     options.dims = eval(options.dims)
     options.resolution = [int(r) for r in  options.resolution.split('x')]

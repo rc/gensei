@@ -148,6 +148,33 @@ class Object(object):
         else:
             return object.__repr__(self)
 
+class Config(Object):
+
+    def from_file(filename, required, optional):
+        
+        conf_mod = import_file(filename)
+
+        if 'define' in conf_mod.__dict__:
+            define_dict = conf_mod.__dict__['define']()
+        else:
+            define_dict = conf_mod.__dict__
+
+        valid = {}
+        for kw in required:
+            try:
+                val = define_dict[kw]
+            except KeyError:
+                raise ValueError('missing keyword "%s" in "%s"!'
+                                 % (kw, filename))
+            valid[kw] = val
+
+        for kw in optional:
+            valid[kw] = define_dict.get(kw, None)
+
+        return Config(**valid)
+    from_file = staticmethod(from_file)
+    
+
 class Output(Object):
     """Factory class providing output (print) functions.
 
