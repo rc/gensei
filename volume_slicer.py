@@ -4,6 +4,7 @@ from optparse import OptionParser
 import numpy as np
 import matplotlib.pyplot as plt
 
+from gensei.base import *
 from gensei import Ellipsoid
 from gensei.utils import get_random, get_suffix, format_dict
 from gensei.geometry import get_average_semiaxes
@@ -78,7 +79,7 @@ def main():
 
     options.dims = eval(options.dims)
     options.resolution = [int(r) for r in  options.resolution.split('x')]
-    print options
+    output(options)
 
     orig_options = copy.deepcopy(options.__dict__)
 
@@ -91,19 +92,19 @@ def main():
 
         semiaxes = get_average_semiaxes(average_object_volume,
                                         options.length_to_width)
-        print 'fraction: %s, major semiaxis: %s' % (options.fraction,
-                                                    semiaxes[0])
+        output('fraction: %s, major semiaxis: %s' % (options.fraction,
+                                                     semiaxes[0]))
         box_dims = np.array(options.dims, dtype=np.float64)
         rbox_conservative = box_dims - 2.0 * semiaxes[0]
         if np.alltrue(rbox_conservative > 0):
             break
         options.fraction *= options.fraction_reduction
 
-    print 'total volume [(%s)^3]: %.2f' % (options.units, total_volume)
-    print 'total object volume [(%s)^3]: %.2f' % (options.units,
-                                                  total_object_volume)
-    print 'average object volume [(%s)^3]: %.2f' % (options.units,
-                                                    average_object_volume)
+    output('total volume [(%s)^3]: %.2f' % (options.units, total_volume))
+    output('total object volume [(%s)^3]: %.2f' % (options.units,
+                                                  total_object_volume))
+    output('average object volume [(%s)^3]: %.2f' % (options.units,
+                                                    average_object_volume))
     raw_input(""">>> press <Enter> to generate objects
 if it takes too long, press <Ctrl-C> and retry with different parameters""")
 
@@ -112,16 +113,16 @@ if it takes too long, press <Ctrl-C> and retry with different parameters""")
     object_volume = 0.0
     els = []
     for ii in xrange(options.n_object):
-        print ('\n*** %d ' % ii) + 70*'*' + '\n'
+        output(('\n*** %d ' % ii) + 70*'*' + '\n')
 
         t0 = time.clock()
         ok = True
         while 1:
             if (time.clock() - t0) > options.timeout:
-                print 'timeout!'
-                print '-> try reducing --fraction'
-                print '   or adjusting --length-to-width, --n-object,'\
-                      ' --timeout options'
+                output('timeout!')
+                output('-> try reducing --fraction')
+                output('   or adjusting --length-to-width, --n-object,'\
+                      ' --timeout options')
                 ok = False
                 break
             # Ensure the whole ellipsoid in the box. 
@@ -146,14 +147,14 @@ if it takes too long, press <Ctrl-C> and retry with different parameters""")
                 break
 
         if ok:
-            print 'accepted:', el
+            output('accepted:', el)
             els.append(el)
             object_volume += el.volume
         else:
             break
 
     total_volume_error = abs(total_object_volume - object_volume)
-    print 'total volume error:', total_volume_error
+    output('total volume error:', total_volume_error)
 
     output_dir = os.path.dirname(options.output_filename_trunk)
     raw_input(""">>> press <Enter> to save slices in '%s'
@@ -194,8 +195,8 @@ all files in that directory will be deleted""" % output_dir)
         zb_name = ('%05.2f' % zb1).replace('.', '_')
         filename = '.'.join((options.output_filename_trunk,
                              suffix % iz, zb_name, options.output_format))
-        print iz, zb1, filename
-        print 'computing...'
+        output(iz, zb1, filename)
+        output('computing')
         z.fill(zb1)
         points = np.c_[x, y, z]
 
@@ -227,21 +228,21 @@ all files in that directory will be deleted""" % output_dir)
 ##             print time.clock() - tt
 #        print np.alltrue(mask==mask2)
 
-        print 'drawing...'
+        output('drawing')
         ax.cla()
         ax.set_axis_off()
         ax.imshow(mask.reshape(imshape), origin='upper')
 
-        print 'saving...'
+        output('saving')
         plt.savefig(filename, format=options.output_format, dpi=dpi)
-        print 'done.'
+        output('done')
 ##        plt.show()
 
     time_end = time.time()
 
     # Save the statistics to a text file.
     reportname = options.output_filename_trunk + '_info.txt'
-    print 'saving report to %s...' % reportname
+    output('saving report to %s' % reportname)
     fd = open(reportname, 'w')
     fd.write('started: %s\n' % time.ctime(time_start))
     fd.write('elapsed: %.1f [s]\n' % (time_end - time_start))
@@ -266,7 +267,7 @@ all files in that directory will be deleted""" % output_dir)
     fd.write('run with adjusted (raw) options:\n')
     fd.write(format_dict(options.__dict__, raw=orig_options))
     fd.close()
-    print 'done.'
+    output('done')
     
 if __name__ == "__main__":
     main()

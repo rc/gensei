@@ -1,5 +1,10 @@
 # Ignore all subdirs.
 */*
 
+# Except:
+!gensei/*
+
+# Ignored patterns.
 *.png
 *.jpg
+*.pyc

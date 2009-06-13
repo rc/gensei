@@ -2,36 +2,14 @@ import numpy as np
 from scipy.linalg import eig, inv
 
 import gensei.geometry as gm
-
-class Object(object):
-
-    def __str__(self):
-        msg = ['%s' % object.__str__(self)]
-
-        keys = self.traits.keys()
-        order = np.argsort(keys)
-        for ii in order:
-            key = keys[ii]
-            val = self.traits[key]
-
-            if isinstance(val, tuple):
-                tr = val[1]
-                attr = val[0] % tr(getattr(self, key))
-            else:
-                attr = val % getattr(self, key)
-            msg.append(attr)
-
-        return '\n'.join(msg)
-
-    def __repr__(self):
-        return object.__repr__(self)
+from gensei.base import Object
 
 class Ellipsoid(Object):
     traits = {
         'semiaxes' : 'semiaxes: %s',
         'centre' : 'centre: %s',
         'rot_axis' : 'rot. axis: %s',
-        'rot_angle' : ('rot. angle: %s', lambda x: x * 180.0 / np.pi),
+        'rot_angle' : ('rot. angle: %.2f', lambda x: x * 180.0 / np.pi),
     }
 
     def __init__(self, semiaxes, centre, rot_axis, rot_angle):
