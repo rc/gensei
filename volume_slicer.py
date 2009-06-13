@@ -2,296 +2,11 @@
 import os, glob, copy, time
 from optparse import OptionParser
 import numpy as np
-from scipy.linalg import eig, inv
-import pylab as pl
+import matplotlib.pyplot as plt
 
-def make_axis_rotation_matrix(direction, angle):
-    """
-    Create a rotation matrix corresponding to the rotation around a general
-    axis by a specified angle.
-    
-    R = dd^T + cos(a) (I - dd^T) + sin(a) skew(d)
-    
-    Parameters:
-    
-        angle : float a
-        direction : array d
-    """
-    d = np.array(direction, dtype=np.float64)
-    d /= np.linalg.norm(d)
-    
-    eye = np.eye(3, dtype=np.float64)
-    ddt = np.outer(d, d)
-    skew = np.array([[    0,  d[2],  -d[1]],
-                     [-d[2],     0,  d[0]],
-                     [d[1], -d[0],    0]], dtype=np.float64)
-
-    mtx = ddt + np.cos(angle) * (eye - ddt) + np.sin(angle) * skew
-    return mtx
-
-def make_rotation_matrix_hc(mtx):
-    """Extend a rotation matrix to homogenous coordinates.
-
-    R_hc = [[R, 0],
-            [0, 1]]
-
-    Parameters:
-
-        mtx : 3 x 3 array R
-    """
-    zz = np.zeros((3,), dtype=np.float64)
-    mtx = np.r_[np.c_[mtx, zz], [np.r_[zz, 1]]]
-    return mtx
-
-def make_translation_matrix_hc(point):
-    """Create a matrix whose application corresponds to translation to the
-    point in homogenous coordinates.
-
-    T_hc = [[1, 0, 0, x],
-            [0, 1, 0, y],
-            [0, 0, 1, z],
-            [0, 0, 0, 1]]
-
-    Parameters:
-
-        point : array (x, y, z)
-    """
-    mtx = np.eye(4, dtype=np.float64)
-    mtx[:-1,3] = point
-    return mtx
-
-def get_random(ranges):
-    """Get an array of random numbers 0 <= a_i < ranges[i]."""
-    ranges = np.atleast_1d(ranges)
-    return ranges * np.random.random(len(ranges))
-
-def get_average_semiaxes(volume, length_to_width):
-    """Get semiaxes of an ellipsoid given its volume and length-to-width
-    ratio."""
-    b = c = np.power(volume / (4.0/3.0 * np.pi * length_to_width),
-                     1.0/3.0)
-    a = length_to_width * b
-    return a, b, c
-
-def get_suffix(n):
-    """Get suffix format string given a number of files.
-    
-    Examples:
-
-        n = 5 -> '%01d'
-        n = 15 -> '%02d'
-        n = 1005 -> '%04d'
-    """
-    if n > 1:
-        n_digit = int(np.log10(n - 1) + 1)
-        suffix = '%%0%dd' % n_digit
-    else:
-        suffix = '%d'
-    return suffix
-
-def format_dict(d, raw=None, indent=2):
-    """Format a dictionary for printing.
-
-    Parameters:
-
-        d : dict
-            The dictionary.
-
-        raw : dict
-            The raw (unadjusted) dictionary to compare with.
-
-        indent : int
-            The indentation level.
-
-    Return:
-
-        msg : string
-           The string with dictionary's key : val formatted in two columns.
-    """
-    if raw is None:
-        raw = d
-        
-    msg = ''
-    for key, val in d.iteritems():
-        if val == raw[key]:
-            msg += (' ' * indent) + ('%s : %s\n' % (key, val))
-        else:
-            msg += (' ' * indent) + ('%s : %s (%s)\n' % (key, val, raw[key]))
-    return msg
-
-def transform_to_pixels(coors, max_coors, resolution):
-    """
-    Transform real coordinates (in [0, max_coors]) to pixel coordinates, given
-    the figure resolution and max. coordinates (block dimensions).
-    """
-    pc = np.asarray(resolution)[np.newaxis,:] * coors / max_coors[np.newaxis,:]
-    return pc.astype(np.int32)
-
-class Object(object):
-
-    def __str__(self):
-        msg = ['%s' % object.__str__(self)]
-
-        keys = self.traits.keys()
-        order = np.argsort(keys)
-        for ii in order:
-            key = keys[ii]
-            val = self.traits[key]
-
-            if isinstance(val, tuple):
-                tr = val[1]
-                attr = val[0] % tr(getattr(self, key))
-            else:
-                attr = val % getattr(self, key)
-            msg.append(attr)
-
-        return '\n'.join(msg)
-
-    def __repr__(self):
-        msg = ['%s' % object.__str__(self)]
-
-class Ellipsoid(Object):
-    traits = {
-        'semiaxes' : 'semiaxes: %s',
-        'centre' : 'centre: %s',
-        'rot_axis' : 'rot. axis: %s',
-        'rot_angle' : ('rot. angle: %s', lambda x: x * 180.0 / np.pi),
-    }
-
-    def __init__(self, semiaxes, centre, rot_axis, rot_angle):
-        """
-        Parameters:
-
-            semiaxes : (float, float, float)
-                The semiaxes a, b, c of the ellipsoid.
-
-            centre : (float, float, float)
-                The position of the ellipsoid's centre in space.
-
-            rot_axis : (float, float, float)
-                The direction vector of rotation axis defining the orientation
-                in space.
-
-            rot_angle : float
-                The rotation angle around the rotation axis.
-            
-        """
-        self.semiaxes = np.array(semiaxes, dtype=np.float64)
-        self.rot_axis = np.array(rot_axis, dtype=np.float64)
-        self.rot_angle = rot_angle
-
-        self.volume = 4.0 / 3.0 * np.pi * np.prod(self.semiaxes)
-        self.mtx0 = np.diag(1.0 / (self.semiaxes**2))
-
-        self.rot_mtx = make_axis_rotation_matrix(self.rot_axis, self.rot_angle)
-        self.mtx = np.dot(self.rot_mtx.T, np.dot(self.mtx0, self.rot_mtx))
-
-        self.rot_mtx_hc = make_rotation_matrix_hc(self.rot_mtx)
-
-        self.set_centre(centre)
-
-    def set_centre(self, centre):
-        """Set the ellipsoid's centre and update its description matrix in
-        homogenous coordinates."""
-        self.centre = np.array(centre, dtype=np.float64)
-        self.mtx_hc = self._get_matrix_hc()
-
-    def _get_matrix_hc(self):
-        """
-        Get the matrix describing the ellipsoid in homogenous coordinates.
-        It incorporates both the rotation and translation.
-        
-        Return:
-               mtx_hc : 4 x 4 array
-                   The matrix describing the ellipsoid in homogenous
-                   coordinates.
-        """
-        M0 = np.zeros((4, 4), dtype=np.float64)
-        M0[:3,:3] = self.mtx0
-        M0[3, 3] = -1
-
-        M1 = np.dot(self.rot_mtx_hc.T, np.dot(M0, self.rot_mtx_hc))
-
-        T = make_translation_matrix_hc(-self.centre)
-
-        mtx_hc = np.dot(T.T, np.dot(M1, T))
-
-##         print M0
-##         print M1
-##         print T
-##         print mtx_hc
-        
-        return mtx_hc
-
-    def get_origin_bounding_box(self):
-        """
-        Get the ellipsoid's bounding box as if centered at the origin.
-        
-        Return:
-            bbox : 3 x 2 array
-                The bounding box.
-        """
-        aux = np.sqrt(np.diag(inv(self.mtx)))[:,np.newaxis]
-        return np.c_[-aux, aux]
-
-    def get_bounding_box(self):
-        """
-        Get the ellipsoid's bounding box.
-        
-        Return:
-            bbox : 3 x 2 array
-                The bounding box.
-        """
-        obb = self.get_origin_bounding_box()
-        return obb + self.centre[:,np.newaxis]
-
-    def __contains__(self, point):
-        """
-        Point x in ellipsoid A <=> x^T A x <= 1.
-        """
-        x = point - self.centre
-        aux = np.dot(x, np.dot(self.mtx, x))
-        return aux <= 1.0
-
-    def contains(self, points):
-        """
-        Point x in ellipsoid A <=> x^T A x <= 1.
-        Works for array of points.
-
-        Parameters:
-            points : (n_point, 3) array
-        """
-        points = np.array(points, ndmin=2, dtype=np.float64)
-        x = points.T - self.centre[:,np.newaxis]
-        aux = np.sum(x * np.dot(self.mtx, x), axis = 0)
-        mask = np.where(aux <= 1.0, True, False)
-##         x2 = np.r_[points.T, np.ones((1,points.shape[0]))]
-##         aux2 = np.sum(x2 * np.dot(self.mtx_hc, x2), axis = 0)
-##         mask2 = np.where(aux2 <= 0.0, True, False)
-##         print np.alltrue(mask == mask2)
-        
-        return mask
-
-    def intersects(self, other):
-        """Test if two ellipsoids self and other intersect.
-
-        Return:
-            value : int
-                0 -> the ellipsoids are disjoint
-                1 -> touch in a single surface point
-                2 -> have common inner points
-        """
-        A, B = self.mtx_hc, other.mtx_hc
-        eigs = eig(np.dot(-inv(A), B), left=False, right=False).real
-        roots = np.sort(eigs)
-#        print roots
-        if roots[2] > 0:
-            if roots[2] != roots[3]:
-                return 0
-            else:
-                return 1
-        else:
-            return 2
+from gensei import Ellipsoid
+from gensei.utils import get_random, get_suffix, format_dict
+from gensei.geometry import get_average_semiaxes
 
 usage = """%prog [options] filename_in"""
 
@@ -470,11 +185,11 @@ all files in that directory will be deleted""" % output_dir)
     # ellipsoids.
     imshape = options.resolution[::-1]
     aspect = float(options.resolution[1]) / options.resolution[0]
-    figsize = pl.figaspect(aspect)
+    figsize = plt.figaspect(aspect)
     dpi = options.resolution[0] / figsize[0]
 
-    pl.figure(1, figsize=figsize, dpi=dpi)
-    ax = pl.gcf().add_axes([0, 0, 1, 1])
+    plt.figure(1, figsize=figsize, dpi=dpi)
+    ax = plt.gcf().add_axes([0, 0, 1, 1])
     for iz, zb1 in enumerate(zb):
         zb_name = ('%05.2f' % zb1).replace('.', '_')
         filename = '.'.join((options.output_filename_trunk,
@@ -518,9 +233,9 @@ all files in that directory will be deleted""" % output_dir)
         ax.imshow(mask.reshape(imshape), origin='upper')
 
         print 'saving...'
-        pl.savefig(filename, format=options.output_format, dpi=dpi)
+        plt.savefig(filename, format=options.output_format, dpi=dpi)
         print 'done.'
-##        pl.show()
+##        plt.show()
 
     time_end = time.time()
 
