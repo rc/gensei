@@ -1,6 +1,7 @@
 import os, sys
 import numpy as np
 import copy
+import types
 
 from getch import getch
 
@@ -56,25 +57,22 @@ def spause( msg = None ):
 class Object(object):
     traits = {}
 
+    @staticmethod
     def objects_from_dict(*args, **kwargs):
 
-        try:
-            level = kwargs['level']
-        except:
-            level = 0
-
-        flag = kwargs['flag']
+        kws = copy.copy(kwargs)
+        
+        level = kws.pop('level', 0)
+        flag = kws.pop('flag')
 
         # For level 0 only...
-        try:
-            constructor = kwargs['constructor']
-        except:
-            constructor = Object
+        constructor = kws.pop('constructor', Object)
 
         out = []
         for arg in args:
             if type(arg) == dict:
                 if flag[level]:
+                    arg.update(kws)
                     aux = constructor(**arg)
                     iterator = aux.__dict__
                 else:
@@ -102,7 +100,6 @@ class Object(object):
             out = out[0]
 
         return out
-    objects_from_dict = staticmethod(objects_from_dict)
 
     def __init__(self, **kwargs):
         if kwargs:
@@ -112,6 +109,10 @@ class Object(object):
 
     def set_default_traits(self, keys):
         self.traits.update({}.fromkeys(keys))
+
+    def init_trait(self, name, value, format=None):
+        setattr(self, name, value)
+        self.traits[name] = format
             
     def __str__(self):
         msg = ['%s' % object.__str__(self)]
@@ -126,6 +127,9 @@ class Object(object):
                 tr = val[1]
                 attr = tr(getattr(self, key))
                 val = val[0]
+            elif isinstance(val, types.FunctionType):
+                attr = val(self)
+                val = None
             else:
                 attr = getattr(self, key)
                 

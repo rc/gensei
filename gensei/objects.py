@@ -1,8 +1,8 @@
-import numpy as np
 from scipy.linalg import eig, inv
 
 import gensei.geometry as gm
-from gensei.base import Object
+from gensei.base import np, Object, pause
+from gensei.geometry import get_average_semiaxes
 
 class Ellipsoid(Object):
     traits = {
@@ -11,6 +11,18 @@ class Ellipsoid(Object):
         'rot_axis' : 'rot. axis: %s',
         'rot_angle' : ('rot. angle: %.2f', lambda x: x * 180.0 / np.pi),
     }
+
+    @staticmethod
+    def from_conf(conf, box):
+        print conf
+        print box
+
+        average_volume = conf.fraction * box.volume
+        semiaxes = get_average_semiaxes(average_volume,
+                                        conf.length_to_width)
+        print average_volume
+        print semiaxes
+        pause()
 
     def __init__(self, semiaxes, centre, rot_axis, rot_angle):
         """
@@ -148,3 +160,44 @@ class Ellipsoid(Object):
         else:
             return 2
 
+class Objects(Object, dict):
+    traits = {
+        'names' : None,
+        'objects' : lambda self: dict.__repr__(self),
+    }
+
+    @staticmethod
+    def from_conf(conf, box):
+
+##         objs = Objects(conf.keys(), conf.values())
+##         print objs
+        
+        objs = Objects()
+
+        for key, val in conf.iteritems():
+            print key
+            print val
+            try:
+                cls = eval(val['kind'].capitalize())
+            except NameError:
+                raise ValueError('unknown object kind! (%s)' % val['kind'])
+            print cls
+
+            obj_conf = Object.objects_from_dict(val, name='obj_conf', flag=(1,))
+            obj = cls.from_conf(obj_conf, box)
+            print obj
+            pause()
+            objs[key] = obj
+        
+        return objs
+        
+    def __init__(self, names=None, objs=None):
+        if names is None:
+            names, objs = [], []
+        dict.__init__(self, zip(names, objs))
+        self.names = sorted(self.keys())
+
+    def __setitem__(self, key, item):
+        super(Objects, self).__setitem__(key, item)
+        self.names = sorted(self.keys())
+        

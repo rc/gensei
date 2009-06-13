@@ -144,6 +144,13 @@ def main():
                                   optional=['options'])
 
     print config
+    pause()
+
+    box = Box(**config.box)
+    
+    objects = Objects.from_conf(config.objects, box)
+    print objects
+    pause()
 
     options.dims = eval(options.dims)
     options.resolution = [int(r) for r in  options.resolution.split('x')]

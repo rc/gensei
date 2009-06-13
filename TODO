@@ -1,2 +1,6 @@
-- speed-up ellipsoid-plane intersection generation
-
+# -*- Python -*-
+- speed-up ellipsoid-plane intersection generation:
+    - rotated bounding box - plane intersection
+    - test only points in the intersection
+- Object.reduce_to_fit(), .centered_fits_box()
+- ?? use traits(GUI)
