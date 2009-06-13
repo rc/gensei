@@ -5,37 +5,82 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 from gensei.base import *
-from gensei import Ellipsoid
+from gensei import Objects, Ellipsoid, Box
 from gensei.utils import get_random, get_suffix, format_dict
 from gensei.geometry import get_average_semiaxes
 
-usage = """%prog [options] filename"""
+usage = """%prog [options] [filename]
+
+If an input file is given, the object class options have no effect.
+
+Default option values do _not_ override the input file options.
+"""
+
+defaults = {
+    'fraction' : 0.1,
+    'fraction_reduction' : 0.9,
+    'length_to_width' : 8.0,
+
+    'n_slice' : 21,
+    'dims' : '(10, 10, 10)',
+    'units' : 'mm',
+    'resolution' : '600x600',
+    'n_object' : 10,
+    'output_format' : 'png',
+    'timeout' : 5.0,
+}
+
+default_objects = {
+    'class 1' : {
+        'kind' : 'ellipsoid',
+        'color' : 'r',
+        'fraction' : defaults['fraction'],
+        'length_to_width' : defaults['length_to_width'],
+        'reduce_to_fit' : ('fraction', defaults['fraction_reduction']),
+    },
+}
+
+default_box = {
+    'dims' : defaults['dims'],
+    'units' : defaults['units'],
+    'resolution' : defaults['resolution'],
+    'n_object' : defaults['n_object'],
+    'n_slice' : defaults['n_slice'],
+}
+
+default_options = {
+    'output_format' : defaults['output_format'],
+    'timeout' : defaults['timeout'],
+}
 
 help = {
     'filename' :
     'basename of output file(s) [default: %default]',
     'output_format' :
     'output file format (supported by the matplotlib backend used) '\
-    '[default: %default]',
+    '[default: %s]' % defaults['output_format'],
     'n_slice' :
-    'number of slices to generate [default: %default]',
+    'number of slices to generate [default: %s]' % defaults['n_slice'],
     'dims' :
-    'dimensions of specimen in units given by --units [default: %default]',
+    'dimensions of specimen in units given by --units [default: %s]' \
+     % defaults['dims'],
     'units' :
-    'length units to use [default: %default]',
+    'length units to use [default: %s]' % defaults['units'],
     'resolution' :
-    'figure resolution [default: %default]',
+    'figure resolution [default: %s]' % defaults['resolution'],
     'fraction' :
-    'volume fraction of objects [default: %default]',
+    'volume fraction of objects [default: %s]' % defaults['fraction'],
     'fraction_reduction' :
-    'volume fraction reduction factor [default: %default]',
+    'volume fraction reduction factor [default: %s]' \
+    % defaults['fraction_reduction'],
     'length_to_width' :
-    'length-to-width ratio of objects [default: %default]',
+    'length-to-width ratio of objects [default: %s]' \
+    % defaults['length_to_width'],
     'n_object' :
-    'number of objects [default: %default]',
+    'number of objects [default: %s]' % defaults['n_object'],
     'timeout' :
     'timeout in seconds for attempts to place more ellipsiods into '\
-    'the block [default: %default]',
+    'the block [default: %s]' % defaults['timeout'],
 }
 
 def main():
@@ -47,44 +92,57 @@ def main():
                       default='./slices/slice', help=help['filename'])
     parser.add_option("-f", "--format", metavar='format',
                       action="store", dest="output_format",
-                      default="png", help=help['output_format'])
+                      default=None, help=help['output_format'])
     parser.add_option("-n", "--n-slice", type=int, metavar='int',
                       action="store", dest="n_slice",
-                      default=21, help=help['n_slice'])
+                      default=None, help=help['n_slice'])
     parser.add_option("-d", "--dims", metavar='dims',
                       action="store", dest="dims",
-                      default='(10, 10, 10)', help=help['dims'])
+                      default=None, help=help['dims'])
     parser.add_option("-u", "--units", metavar='units',
                       action="store", dest="units",
-                      default='mm', help=help['units'])
+                      default=None, help=help['units'])
     parser.add_option("-r", "--resolution", metavar='resolution',
                       action="store", dest="resolution",
-                      default='600x600', help=help['resolution'])
+                      default=None, help=help['resolution'])
     parser.add_option("", "--fraction", type=float, metavar='float',
                       action="store", dest="fraction",
-                      default='0.1', help=help['fraction'])
+                      default=None, help=help['fraction'])
     parser.add_option("", "--fraction-reduction", type=float, metavar='float',
                       action="store", dest="fraction_reduction",
-                      default='0.9', help=help['fraction_reduction'])
+                      default=None, help=help['fraction_reduction'])
     parser.add_option("", "--length-to-width", type=float, metavar='float',
                       action="store", dest="length_to_width",
-                      default='8.0', help=help['length_to_width'])
+                      default=None, help=help['length_to_width'])
     parser.add_option("", "--n-object", type=int, metavar='int',
                       action="store", dest="n_object",
-                      default='10', help=help['n_object'])
+                      default=None, help=help['n_object'])
     parser.add_option("-t", "--timeout", type=float, metavar='float',
                       action="store", dest="timeout",
-                      default='5.0', help=help['timeout'])
+                      default=None, help=help['timeout'])
     options, args = parser.parse_args()
+
+    can_override = set()
+    for key, default in defaults.iteritems():
+        val = getattr(options, key)
+        if val is None:
+            setattr(options, key, default)
+        else:
+            can_override.add(key)
 
     if len(args) == 1:
         filename = args[0]
-    else:
-        parser.print_help(),
-        return
+        config = Config.from_file(filename, required=['objects', 'box'],
+                                  optional=['options'])
+        config.override(options, can_override)
 
-    config = Config.from_file(filename, required=['objects', 'box'],
-                              optional=['options'])
+    else:
+        conf = {'objects' : default_objects,
+                'box' : default_box,
+                'options' : default_options}
+        config = Config.from_conf(conf, required=['objects', 'box'],
+                                  optional=['options'])
+
     print config
 
     options.dims = eval(options.dims)

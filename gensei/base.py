@@ -150,8 +150,8 @@ class Object(object):
 
 class Config(Object):
 
+    @staticmethod
     def from_file(filename, required, optional):
-        
         conf_mod = import_file(filename)
 
         if 'define' in conf_mod.__dict__:
@@ -159,21 +159,29 @@ class Config(Object):
         else:
             define_dict = conf_mod.__dict__
 
+        return Config.from_conf(define_dict, required, optional)
+
+    @staticmethod
+    def from_conf(conf, required, optional):
         valid = {}
         for kw in required:
             try:
-                val = define_dict[kw]
+                val = conf[kw]
             except KeyError:
                 raise ValueError('missing keyword "%s" in "%s"!'
                                  % (kw, filename))
             valid[kw] = val
 
         for kw in optional:
-            valid[kw] = define_dict.get(kw, None)
+            valid[kw] = conf.get(kw, None)
 
         return Config(**valid)
-    from_file = staticmethod(from_file)
-    
+
+    def override(self, options, can_override):
+        for group_key, group in self.__dict__.iteritems():
+            for key, val in group.iteritems():
+                if key in can_override:
+                    group[key] = getattr(options, key)
 
 class Output(Object):
     """Factory class providing output (print) functions.
