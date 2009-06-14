@@ -148,8 +148,8 @@ def main():
 
     box = Box(**config.box)
     
-    objects = Objects.from_conf(config.objects, box)
-    print objects
+    object_classes = Objects.from_conf(config.objects, box)
+    print object_classes
     pause()
 
     options.dims = eval(options.dims)

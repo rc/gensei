@@ -125,13 +125,21 @@ class Object(object):
 
             if isinstance(val, tuple):
                 tr = val[1]
-                attr = tr(getattr(self, key))
-                val = val[0]
+                try:
+                    attr = tr(getattr(self, key))
+                except:
+                    attr = '<not set>'
+                    val = '%s'
+                else:
+                    val = val[0]
             elif isinstance(val, types.FunctionType):
                 attr = val(self)
                 val = None
             else:
-                attr = getattr(self, key)
+                try:
+                    attr = getattr(self, key)
+                except:
+                    attr = '<not set>'
                 
             if issubclass(attr.__class__, Object):
                 sattr = repr(attr)
@@ -140,7 +148,7 @@ class Object(object):
                 if val is None:
                     attr = '%s: %s' % (key, attr)
                 else:
-                    attr = val % attr
+                    attr = ('%s: ' % key) + (val % attr)
 
             msg.append(attr)
 
