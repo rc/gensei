@@ -160,6 +160,12 @@ class Object(object):
         else:
             return object.__repr__(self)
 
+    def copy(self, deep=False):
+        if deep:
+            return copy.deepcopy(self)
+        else:
+            return copy(self)
+
 class Config(Object):
 
     @staticmethod

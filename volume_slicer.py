@@ -3,11 +3,131 @@ import os, glob, copy, time
 from optparse import OptionParser
 import numpy as np
 import matplotlib.pyplot as plt
+from matplotlib.colors import colorConverter
 
 from gensei.base import *
 from gensei import Objects, Ellipsoid, Box
 from gensei.utils import get_random, get_suffix, format_dict
 from gensei.geometry import get_average_semiaxes
+
+axis_map = {'x' : [1, 2, 0], 'y' : [2, 0, 1], 'z' : [0, 1, 2]}
+
+def get_points(box):
+    # All points in the block.
+    n_slice = box.n_slice
+    if not isinstance(n_slice, dict):
+        n_slice = {'z' : int(n_slice)}
+
+    for axis, num in n_slice.iteritems():
+        am = axis_map[axis]
+
+        shape = np.array((box.resolution[0], box.resolution[1], num))
+        pb = np.zeros((3,), dtype=np.object)
+        for ii in range(3):
+            pb[am[ii]] = np.linspace(0, box.dims[ii], shape[ii])
+
+        if num > 1:
+            delta = pb[am[2]][1] - pb[am[2]][0]
+        else:
+            delta = 0.0
+        x1, x2 = np.meshgrid(pb[am[0]], pb[am[1]])
+        x1 = x1.ravel()
+        x2 = x2.ravel()
+
+        points = np.empty((x1.shape[0], 3), dtype=np.float64)
+        points[:,am[0]] = x1
+        points[:,am[1]] = x2
+
+        yield pb, points, delta, num, axis, am
+
+def generate_slices(objects, box, options, output_filename_trunk):
+    # Save images of the specimen slices along the z axis of the block. Each
+    # image displays a planar cut plane of the block intersecting the
+    # ellipsoids.
+    resolution = box.resolution
+
+    imshape = resolution[::-1] + (3,)
+    aspect = float(resolution[1]) / resolution[0]
+    figsize = plt.figaspect(aspect)
+    dpi = resolution[0] / figsize[0]
+
+    for pb, points, delta, n_slice, axis, am in get_points(box):
+        suffix = get_suffix(n_slice)
+
+        # dpi=dpi in plt.figure() messes with figsize... ???
+        fig = plt.figure(1, figsize=figsize, dpi=dpi)
+        fig.set_figwidth(figsize[0])
+        fig.set_figheight(figsize[1])
+        ax = fig.add_axes([0, 0, 1, 1])
+
+        x1b, x2b = pb[am[0]], pb[am[1]]
+        for islice, x3b in enumerate(pb[am[2]]):
+            x3b_name = ('%05.2f' % x3b).replace('.', '_')
+            filename = '.'.join((output_filename_trunk, axis,
+                                 suffix % islice, x3b_name,
+                                 options.output_format))
+            output(islice, x3b, filename)
+            output('computing')
+            points[:,am[2]] = x3b
+
+            mask = np.zeros(points.shape[0], dtype=np.int8)
+            cmask = np.zeros((points.shape[0], 3), dtype=np.float64)
+            for obj in objects.itervalues():
+                color = np.array(colorConverter.to_rgb(obj.conf.color))
+
+                bbox = obj.get_bounding_box()[am]
+                
+                ix1 = np.where((x1b > bbox[0,0]) & (x1b < bbox[0,1]))[0]
+                ix2 = np.where((x2b > bbox[1,0]) & (x2b < bbox[1,1]))[0]
+                a, b = np.meshgrid(ix1, resolution[0]*ix2)
+                ii = (a + b).ravel()
+
+                _mask = obj.contains(points[ii])
+                mask[ii] += _mask
+                cmask[ii[_mask]] = color
+
+            assert_(np.alltrue(mask <= 1))
+            output('drawing')
+            ax.cla()
+            ax.set_axis_off()
+            ax.imshow(cmask.reshape(imshape), origin='upper')
+
+            output('saving')
+            plt.savefig(filename, format=options.output_format, dpi=dpi)
+            output('done')
+##        plt.show()
+
+    time_end = time.time()
+
+    # Save the statistics to a text file.
+    reportname = options.output_filename_trunk + '_info.txt'
+    output('saving report to %s' % reportname)
+    fd = open(reportname, 'w')
+    fd.write('started: %s\n' % time.ctime(time_start))
+    fd.write('elapsed: %.1f [s]\n' % (time_end - time_start))
+    fd.write('-'*50 + '\n')
+    fd.write('dimensions of specimen [%s]: (%f, %f, %f)\n' %\
+             ((options.units,) + options.dims))
+    fd.write('volume of specimen [(%s)^3]: %f\n' % (options.units, total_volume))
+    fd.write('number of slices: %d\n' % options.n_slice)
+    fd.write('slice distance [%s]: %f\n' % (options.units, dz))
+    fd.write('%d (required: %d) objects (ellipsiods):\n' % (len(objects),
+                                                            options.n_object))
+    fd.write('  volume fraction: %f\n' % options.fraction)
+    fd.write('  total volume [(%s)^3]: %f\n' % (options.units,
+                                                total_object_volume))
+    fd.write('  total volume error [(%s)^3]: %f\n' % (options.units,
+                                                      total_volume_error))
+    fd.write('  average volume [(%s)^3]: %f\n' % (options.units,
+                                                  average_object_volume))
+    fd.write('  length-to-width ratio: %f\n' % options.length_to_width)
+    fd.write('  semiaxes [%s]: (%f, %f, %f)\n' % ((options.units,) + semiaxes))
+    fd.write('-'*50 + '\n')
+    fd.write('run with adjusted (raw) options:\n')
+    fd.write(format_dict(options.__dict__, raw=orig_options))
+    fd.close()
+    output('done')
+
 
 usage = """%prog [options] [filename]
 
@@ -36,7 +156,10 @@ default_objects = {
         'color' : 'r',
         'fraction' : defaults['fraction'],
         'length_to_width' : defaults['length_to_width'],
-        'reduce_to_fit' : ('fraction', defaults['fraction_reduction']),
+        'reduce_to_fit' : {'fraction' : defaults['fraction_reduction']},
+        'centre' : 'random',
+        'rot_axis' : 'random',
+        'rot_angle': 'random',
     },
 }
 
@@ -120,13 +243,13 @@ def main():
     parser.add_option("-t", "--timeout", type=float, metavar='float',
                       action="store", dest="timeout",
                       default=None, help=help['timeout'])
-    options, args = parser.parse_args()
+    cmdl_options, args = parser.parse_args()
 
     can_override = set()
     for key, default in defaults.iteritems():
-        val = getattr(options, key)
+        val = getattr(cmdl_options, key)
         if val is None:
-            setattr(options, key, default)
+            setattr(cmdl_options, key, default)
         else:
             can_override.add(key)
 
@@ -134,105 +257,43 @@ def main():
         filename = args[0]
         config = Config.from_file(filename, required=['objects', 'box'],
                                   optional=['options'])
-        config.override(options, can_override)
-
+        config.override(cmdl_options, can_override)
     else:
         conf = {'objects' : default_objects,
                 'box' : default_box,
                 'options' : default_options}
         config = Config.from_conf(conf, required=['objects', 'box'],
                                   optional=['options'])
+    if isinstance(config.box['dims'], str):
+        config.box['dims'] = eval(config.box['dims'])
+    if isinstance(config.box['resolution'], str):
+        aux = tuple([int(r) for r in  config.box['resolution'].split('x')])
+        config.box['resolution'] = aux
 
-    print config
-    pause()
+##     print config
 
     box = Box(**config.box)
+    options = Object(name='options', **config.options)
+
+    print box
+    print options
     
     object_classes = Objects.from_conf(config.objects, box)
     print object_classes
-    pause()
 
-    options.dims = eval(options.dims)
-    options.resolution = [int(r) for r in  options.resolution.split('x')]
-    output(options)
-
-    orig_options = copy.deepcopy(options.__dict__)
-
-    # Adjust the volume fraction of ellipsoids so that they fit in the
-    # specimen's block.
-    total_volume = np.prod(options.dims)
-    while 1:
-        total_object_volume = options.fraction * total_volume
-        average_object_volume = total_object_volume / options.n_object
-
-        semiaxes = get_average_semiaxes(average_object_volume,
-                                        options.length_to_width)
-        output('fraction: %s, major semiaxis: %s' % (options.fraction,
-                                                     semiaxes[0]))
-        box_dims = np.array(options.dims, dtype=np.float64)
-        rbox_conservative = box_dims - 2.0 * semiaxes[0]
-        if np.alltrue(rbox_conservative > 0):
-            break
-        options.fraction *= options.fraction_reduction
-
-    output('total volume [(%s)^3]: %.2f' % (options.units, total_volume))
-    output('total object volume [(%s)^3]: %.2f' % (options.units,
-                                                  total_object_volume))
-    output('average object volume [(%s)^3]: %.2f' % (options.units,
-                                                    average_object_volume))
-    raw_input(""">>> press <Enter> to generate objects
+    output('total volume [(%s)^3]: %.2f' % (box.units, box.volume))
+##     output('total object volume [(%s)^3]: %.2f' % (options.units,
+##                                                   total_object_volume))
+##     output('average object volume [(%s)^3]: %.2f' % (options.units,
+##                                                     average_object_volume))
+    spause(""">>> press a key to generate objects
 if it takes too long, press <Ctrl-C> and retry with different parameters""")
 
-    # Generate non-intersecting ellipsoids fully contained in the specimen's
-    # block.
-    object_volume = 0.0
-    els = []
-    for ii in xrange(options.n_object):
-        output(('\n*** %d ' % ii) + 70*'*' + '\n')
+    objects = object_classes.place_objects(box, options)
+    print objects
 
-        t0 = time.clock()
-        ok = True
-        while 1:
-            if (time.clock() - t0) > options.timeout:
-                output('timeout!')
-                output('-> try reducing --fraction')
-                output('   or adjusting --length-to-width, --n-object,'\
-                      ' --timeout options')
-                ok = False
-                break
-            # Ensure the whole ellipsoid in the box. 
-            axis = get_random((1.0, 1.0, 1.0))
-            angle = get_random(np.pi)
-            el = Ellipsoid(semiaxes, (0.0, 0.0, 0.0), axis, angle)
-            bbox = el.get_origin_bounding_box()
-##             print bbox
-            rbox = box_dims - 2 * bbox[:,1]
-            centre = get_random(rbox) + bbox[:,1]
-            el.set_centre(centre)
-##             print 'centre:', centre
-##             print 'rot. axis, angle:', axis, angle
-#            el = Ellipsoid(semiaxes, centre, (0,0,1), 135*np.pi/180)
-            for ip, prev in enumerate(els):
-                bad = prev.intersects(el)
-##                 print '%d. intersects: %d' % (ip, bad)
-                if bad:
-                    break
-            else:
-##                 print 'ok'
-                break
-
-        if ok:
-            output('accepted:', el)
-            els.append(el)
-            object_volume += el.volume
-        else:
-            break
-
-    total_volume_error = abs(total_object_volume - object_volume)
-    output('total volume error:', total_volume_error)
-
-    output_dir = os.path.dirname(options.output_filename_trunk)
-    raw_input(""">>> press <Enter> to save slices in '%s'
+    output_dir = os.path.dirname(cmdl_options.output_filename_trunk)
+    spause(""">>> press a key to save slices in '%s'
 all files in that directory will be deleted""" % output_dir)
 
     if not os.path.exists(output_dir):
@@ -241,108 +302,8 @@ all files in that directory will be deleted""" % output_dir)
         files = glob.glob(os.path.join(output_dir, '*'))
         for name in files:
             os.remove(name)
-    suffix = get_suffix(options.n_slice)
 
-    # All points in the block.
-    xb = np.linspace(0, box_dims[0], options.resolution[0])
-    yb = np.linspace(0, box_dims[1], options.resolution[1])
-    zb = np.linspace(0, box_dims[2], options.n_slice)
-    if options.n_slice > 1:
-        dz = zb[1] - zb[0]
-    else:
-        dz = 0.0
-    x, y = np.meshgrid(xb, yb)
-    x = x.ravel()
-    y = y.ravel()
-    z = np.empty_like(x.flat)
+    generate_slices(objects, box, options, cmdl_options.output_filename_trunk)
 
-    # Save images of the specimen slices along the z axis of the block. Each
-    # image displays a planar cut plane of the block intersecting the
-    # ellipsoids.
-    imshape = options.resolution[::-1]
-    aspect = float(options.resolution[1]) / options.resolution[0]
-    figsize = plt.figaspect(aspect)
-    dpi = options.resolution[0] / figsize[0]
-
-    plt.figure(1, figsize=figsize, dpi=dpi)
-    ax = plt.gcf().add_axes([0, 0, 1, 1])
-    for iz, zb1 in enumerate(zb):
-        zb_name = ('%05.2f' % zb1).replace('.', '_')
-        filename = '.'.join((options.output_filename_trunk,
-                             suffix % iz, zb_name, options.output_format))
-        output(iz, zb1, filename)
-        output('computing')
-        z.fill(zb1)
-        points = np.c_[x, y, z]
-
-##         mask = np.zeros(points.shape[0], dtype=np.int32)
-##         for el in els:
-## #            tt = time.clock()
-##             mask += el.contains(points)
-## #            print time.clock() - tt
-## #        mask2 = mask
-
-        mask = np.zeros(points.shape[0], dtype=np.int32)
-        for el in els:
-##             tt = time.clock()
-##             bbox = el.get_bounding_box()
-##             ii = np.where((x > bbox[0,0]) & (x < bbox[0,1])
-##                           & (y > bbox[1,0]) & (y < bbox[1,1]))[0]
-##             ii2 = ii
-##             print '*', time.clock() - tt
-##             tt = time.clock()
-            bbox = el.get_bounding_box()
-            ix = np.where((xb > bbox[0,0]) & (xb < bbox[0,1]))[0]
-            iy = np.where((yb > bbox[1,0]) & (yb < bbox[1,1]))[0]
-            a, b = np.meshgrid(ix, options.resolution[0]*iy)
-            ii = (a + b).ravel()
-##             print time.clock() - tt
-
-##             tt = time.clock()
-            mask[ii] += el.contains(points[ii])
-##             print time.clock() - tt
-#        print np.alltrue(mask==mask2)
-
-        output('drawing')
-        ax.cla()
-        ax.set_axis_off()
-        ax.imshow(mask.reshape(imshape), origin='upper')
-
-        output('saving')
-        plt.savefig(filename, format=options.output_format, dpi=dpi)
-        output('done')
-##        plt.show()
-
-    time_end = time.time()
-
-    # Save the statistics to a text file.
-    reportname = options.output_filename_trunk + '_info.txt'
-    output('saving report to %s' % reportname)
-    fd = open(reportname, 'w')
-    fd.write('started: %s\n' % time.ctime(time_start))
-    fd.write('elapsed: %.1f [s]\n' % (time_end - time_start))
-    fd.write('-'*50 + '\n')
-    fd.write('dimensions of specimen [%s]: (%f, %f, %f)\n' %\
-             ((options.units,) + options.dims))
-    fd.write('volume of specimen [(%s)^3]: %f\n' % (options.units, total_volume))
-    fd.write('number of slices: %d\n' % options.n_slice)
-    fd.write('slice distance [%s]: %f\n' % (options.units, dz))
-    fd.write('%d (required: %d) objects (ellipsiods):\n' % (len(els),
-                                                            options.n_object))
-    fd.write('  volume fraction: %f\n' % options.fraction)
-    fd.write('  total volume [(%s)^3]: %f\n' % (options.units,
-                                                total_object_volume))
-    fd.write('  total volume error [(%s)^3]: %f\n' % (options.units,
-                                                      total_volume_error))
-    fd.write('  average volume [(%s)^3]: %f\n' % (options.units,
-                                                  average_object_volume))
-    fd.write('  length-to-width ratio: %f\n' % options.length_to_width)
-    fd.write('  semiaxes [%s]: (%f, %f, %f)\n' % ((options.units,) + semiaxes))
-    fd.write('-'*50 + '\n')
-    fd.write('run with adjusted (raw) options:\n')
-    fd.write(format_dict(options.__dict__, raw=orig_options))
-    fd.close()
-    output('done')
-    
 if __name__ == "__main__":
     main()

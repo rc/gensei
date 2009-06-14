@@ -2,6 +2,7 @@ from scipy.linalg import eig, inv
 
 import gensei.geometry as gm
 from gensei.base import np, Object, pause
+from gensei.utils import get_random
 from gensei.geometry import get_average_semiaxes
 
 class Ellipsoid(Object):
@@ -28,6 +29,8 @@ class Ellipsoid(Object):
                 The semiaxes a, b, c of the ellipsoid.
         """
         self.semiaxes = np.array(semiaxes, dtype=np.float64)
+        self.volume = 4.0 / 3.0 * np.pi * np.prod(self.semiaxes)
+        self.mtx0 = np.diag(1.0 / (self.semiaxes**2))
 
     def set_conf(self, conf, requested_conf):
         self.conf = conf
@@ -39,12 +42,15 @@ class Ellipsoid(Object):
         orientation in space, and rot_angle, the rotation angle around the
         rotation axis according to self.conf.
         """
-
-        self.volume = 4.0 / 3.0 * np.pi * np.prod(self.semiaxes)
-        self.mtx0 = np.diag(1.0 / (self.semiaxes**2))
-
-        self.rot_axis = np.array(rot_axis, dtype=np.float64)
-        self.rot_angle = rot_angle
+        if self.conf.rot_axis == 'random':
+            self.rot_axis = get_random((1.0, 1.0, 1.0))
+        else:
+            raise NotImplementedError
+        
+        if self.conf.rot_angle == 'random':
+            self.rot_angle = get_random(np.pi)
+        else:
+            raise NotImplementedError
 
         self.rot_mtx = gm.make_axis_rotation_matrix(self.rot_axis,
                                                     self.rot_angle)
