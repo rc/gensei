@@ -6,6 +6,10 @@ specimen filled with ellipsoids. The ellipsoids have known properties such as
 the volume fraction within the block, volumes of individual ellipsoids, a
 length-to-width ratio and number.
 
+Although some basic parameters can be set using the command line options, it is
+preferable to describe the objects and generation rules in an input file - see
+'examples/basic.py', where four classes of objects are defined.
+
 Its purpose is to verify results, obtained by various software for
 reconstructing 3D data (e.g. a living tissue microstructure) given a set of 2D
 slices using usually stereological methods, on a dataset with well-defined and
@@ -18,7 +22,8 @@ Dependencies:
 
 numpy [1], scipy [1], matplotlib [2]
 
-Those packages should be in your favourite Linux distribution. On Windows, installing EPD [3] should get you running.
+Those packages should be in your favourite Linux distribution. On Windows,
+installing EPD [3] should get you running.
 
 [1] http://scipy.org
 [2] http://matplotlib.sourceforge.net
@@ -29,17 +34,22 @@ Command Line Usage:
 
 - Linux (POSIX systems):
   - print help:
-    $./volume_slicer.py -h
+    $ ./volume_slicer.py -h
   - run with default settings:
-    $./volume_slicer.py
+    $ ./volume_slicer.py
+  - run example:
+    $ ./volume_slicer.py examples/basic.py
+  - run example, override some settings:
+    $ ./volume_slicer.py examples/basic.py --resolution=100x100 --n-object=20 
 
 - Windows:
   - print help:
-    $python volume_slicer.py -h
+    $ python volume_slicer.py -h
   - run with default settings:
-    $python volume_slicer.py
+    $ python volume_slicer.py
     or
     double click on the script
+  - for other usage, see above (Linux)
 
 The script can be run also inside ipython using the %run command.
 

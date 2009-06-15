@@ -3,6 +3,7 @@
 
 # Except:
 !gensei/*
+!*.py
 
 # Ignored patterns.
 *.png
