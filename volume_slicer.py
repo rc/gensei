@@ -7,7 +7,7 @@ from matplotlib.colors import colorConverter
 
 from gensei.base import *
 from gensei import Objects, Ellipsoid, Box
-from gensei.utils import get_random, get_suffix, format_dict
+from gensei.utils import get_random, get_suffix
 from gensei.geometry import get_average_semiaxes
 
 axis_map = {'x' : [1, 2, 0], 'y' : [2, 0, 1], 'z' : [0, 1, 2]}
@@ -243,8 +243,8 @@ def main():
     box = Box(**config.box)
     options = Object(name='options', **config.options)
 
-    print box
-    print options
+    output(box)
+    output(options)
     
     object_classes = Objects.from_conf(config.objects, box)
     print object_classes
@@ -278,14 +278,19 @@ all files in that directory will be deleted""" % output_dir)
     # Save the statistics to a text file.
     reportname = cmdl_options.output_filename_trunk + '_info.txt'
     output('saving report to %s' % reportname)
-
     fd = open(reportname, 'w')
+
     fd.write('started: %s\n' % time.ctime(time_start))
     fd.write('elapsed: %.1f [s]\n' % (time_end - time_start))
+
     box.report(fd)
     options.report(fd)
+
+    fd.write(objects.format_statistics()+'\n')
+
     object_classes.report(fd)
     objects.report(fd)
+
     fd.close()
 
     output('all done.')

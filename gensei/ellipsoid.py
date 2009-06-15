@@ -2,7 +2,7 @@ from scipy.linalg import eig, inv
 
 import gensei.geometry as gm
 from gensei.base import np, Object, pause
-from gensei.utils import get_random
+from gensei.utils import get_random, format_dict
 from gensei.geometry import get_average_semiaxes
 
 class Ellipsoid(Object):
@@ -31,6 +31,7 @@ class Ellipsoid(Object):
         self.semiaxes = np.array(semiaxes, dtype=np.float64)
         self.volume = 4.0 / 3.0 * np.pi * np.prod(self.semiaxes)
         self.mtx0 = np.diag(1.0 / (self.semiaxes**2))
+        self.is_placed = False
 
     def set_conf(self, conf, requested_conf):
         self.conf = conf
@@ -163,3 +164,15 @@ class Ellipsoid(Object):
                 return 1
         else:
             return 2
+
+    def report(self, filename):
+        fd = self.fd_open(filename)
+
+        if self.is_placed:
+            Object.report(self, fd, header=False)
+        else:
+            fd.write(format_dict(self.conf.get_dict(),
+                                 raw=self.requested_conf.get_dict()))
+            
+        self.fd_close()
+        

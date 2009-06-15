@@ -55,17 +55,6 @@ def spause( msg = None ):
         sys.exit()
 
 
-def fd_open(filename):
-    if isinstance(filename, file):
-        fd = filename
-    else:
-        fd = open(filename, 'w')
-    return fd
-
-def fd_close(fd, filename):
-    if fd is not filename:
-        fd.close()
-
 _dashes = '-'*50
 
 class Object(object):
@@ -127,6 +116,11 @@ class Object(object):
     def init_trait(self, name, value, format=None):
         setattr(self, name, value)
         self.traits[name] = format
+
+    def get_dict(self):
+        aux = copy.copy(self.__dict__)
+        aux.pop('traits')
+        return aux
             
     def __str__(self):
         return self._format()
@@ -143,11 +137,14 @@ class Object(object):
         else:
             return copy(self)
 
-    def _format(self, mode='print'):
-        if mode == 'print':
-            msg = ['%s' % object.__str__(self)]
+    def _format(self, mode='print', header=True):
+        if header:
+            if mode != 'report':
+                msg = ['%s' % object.__str__(self)]
+            elif mode == 'report':
+                msg = [_dashes, self.__repr__(), _dashes]
         else:
-            msg = [_dashes, self.__repr__(), _dashes]
+            msg = []
             
         keys = self.traits.keys()
         order = np.argsort(keys)
@@ -174,6 +171,8 @@ class Object(object):
                     attr = getattr(self, key)
                 except:
                     attr = '<not set>'
+
+            if (attr == '<not set>') and (mode == 'set_only'): continue
                 
             if issubclass(attr.__class__, Object):
                 sattr = repr(attr)
@@ -188,11 +187,26 @@ class Object(object):
 
         return '\n'.join(msg)
 
-    def report(self, filename):
-        fd = fd_open(filename)
-        fd.write(self._format(mode='report'))
+    def fd_open(self, filename):
+        if isinstance(filename, file):
+            fd = filename
+        else:
+            fd = open(filename, 'w')
+
+        self._fd = fd
+        self._filename = filename
+        
+        return fd
+
+    def fd_close(self):
+        if self._fd is not self._filename:
+            self._fd.close()
+
+    def report(self, filename, header=True):
+        fd = self.fd_open(filename)
+        fd.write(self._format(mode='report', header=header))
         fd.write('\n')
-        fd_close(fd, filename)
+        self.fd_close()
 
 class Config(Object):
 

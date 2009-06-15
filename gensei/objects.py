@@ -1,6 +1,6 @@
 import time
 
-from gensei.base import np, output, Object, pause, assert_
+from gensei.base import np, output, Object, pause, assert_, _dashes
 from gensei.utils import get_random
 from gensei.ellipsoid import Ellipsoid
 
@@ -38,11 +38,10 @@ class Objects(Object, dict):
 
 ##         objs = Objects(conf.keys(), conf.values())
 ##         print objs
-        
-        objs = Objects()
+        objs = Objects(is_placed=False)
 
         for key, val in conf.iteritems():
-            print key
+            output(('*** %s ' % key) + 50*'*')
 
             try:
                 cls = eval(val['kind'].capitalize())
@@ -55,17 +54,20 @@ class Objects(Object, dict):
             obj = reduce_to_fit(cls, obj_conf, box)
             obj.set_conf(obj_conf, obj_conf0)
             
-            print obj
+            output(obj._format(mode='set_only'))
 ##             print obj.conf
 ##             print obj.requested_conf
             objs[key] = obj
         
         return objs
         
-    def __init__(self, names=None, objs=None):
+    def __init__(self, names=None, objs=None, is_placed=False):
         if names is None:
             names, objs = [], []
+
         dict.__init__(self, zip(names, objs))
+        Object.__init__(self, is_placed=is_placed)
+
         self.names = sorted(self.keys())
 
     def __setitem__(self, key, item):
@@ -97,7 +99,8 @@ class Objects(Object, dict):
         """Generate non-intersecting objects fully contained in the specimen's
         block.
         """
-        objs = Objects()
+        objs = Objects(is_placed=True)
+        objs.box = box
 
         n_object = self.init_counts(box.n_object)
         print n_object
@@ -107,7 +110,7 @@ class Objects(Object, dict):
             obj_class = self[key]
             
             for ii in xrange(n_object[key]):
-                output(('*** %s: %d ' % (key, ii)) + 50*'*' + '\n')
+                output(('*** %s: %d ' % (key, ii)) + 50*'*')
 
                 obj = obj_class.copy(deep=True)
 
@@ -126,6 +129,7 @@ class Objects(Object, dict):
                     rbox = box.dims - 2 * bbox[:,1]
                     centre = get_random(rbox) + bbox[:,1]
                     obj.set_centre(centre)
+                    obj.is_placed = True
 ##                     print obj
                     
                     for ip, prev in enumerate(objs.itervalues()):
@@ -148,3 +152,35 @@ class Objects(Object, dict):
         objs.init_trait('total_object_fraction', object_volume / box.volume)
 
         return objs
+
+    def format_statistics(self):
+        units = self.box.units
+
+        msg = [_dashes, 'statistics', _dashes]
+
+        msg.append('  total object volume fraction: %f' \
+                   % self.total_object_fraction)
+        msg.append('  total object volume [(%s)^3]: %f' \
+                   % (units, self.total_object_volume))
+
+        return '\n'.join(msg)
+
+    def report(self, filename):
+        fd = self.fd_open(filename)
+
+        if self.is_placed:
+            msg = '\n'.join([_dashes, 'objects', _dashes])
+            fd.write(msg+'\n')
+        else:
+            msg = '\n'.join([_dashes, 'object classes', _dashes])
+            fd.write(msg+'\n')
+
+        for key in self.names:
+            obj_class = self[key]
+            msg = '\n'.join([_dashes, key, _dashes])
+            fd.write(msg+'\n')
+
+            obj_class.report(fd)
+
+        self.fd_close()
+        
