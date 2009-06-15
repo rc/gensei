@@ -50,8 +50,10 @@ class Objects(Object, dict):
                 raise ValueError('unknown object kind! (%s)' % val['kind'])
 
             obj_conf = Object.objects_from_dict(val, name='obj_conf', flag=(1,))
+            obj_conf0 = obj_conf.copy(deep=True)
+
             obj = reduce_to_fit(cls, obj_conf, box)
-            obj.set_conf(obj_conf, val)
+            obj.set_conf(obj_conf, obj_conf0)
             
             print obj
 ##             print obj.conf

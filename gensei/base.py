@@ -54,6 +54,20 @@ def spause( msg = None ):
     if ch == 'q':
         sys.exit()
 
+
+def fd_open(filename):
+    if isinstance(filename, file):
+        fd = filename
+    else:
+        fd = open(filename, 'w')
+    return fd
+
+def fd_close(fd, filename):
+    if fd is not filename:
+        fd.close()
+
+_dashes = '-'*50
+
 class Object(object):
     traits = {}
 
@@ -115,12 +129,32 @@ class Object(object):
         self.traits[name] = format
             
     def __str__(self):
-        msg = ['%s' % object.__str__(self)]
+        return self._format()
 
+    def __repr__(self):
+        if hasattr(self, 'name'):
+            return "%s:%s" % (self.__class__.__name__, self.name)
+        else:
+            return object.__repr__(self)
+
+    def copy(self, deep=False):
+        if deep:
+            return copy.deepcopy(self)
+        else:
+            return copy(self)
+
+    def _format(self, mode='print'):
+        if mode == 'print':
+            msg = ['%s' % object.__str__(self)]
+        else:
+            msg = [_dashes, self.__repr__(), _dashes]
+            
         keys = self.traits.keys()
         order = np.argsort(keys)
         for ii in order:
             key = keys[ii]
+            if (key == 'name') and (mode == 'report'): continue
+            
             val = self.traits[key]
 
             if isinstance(val, tuple):
@@ -154,17 +188,11 @@ class Object(object):
 
         return '\n'.join(msg)
 
-    def __repr__(self):
-        if hasattr(self, 'name'):
-            return "%s:%s" % (self.__class__.__name__, self.name)
-        else:
-            return object.__repr__(self)
-
-    def copy(self, deep=False):
-        if deep:
-            return copy.deepcopy(self)
-        else:
-            return copy(self)
+    def report(self, filename):
+        fd = fd_open(filename)
+        fd.write(self._format(mode='report'))
+        fd.write('\n')
+        fd_close(fd, filename)
 
 class Config(Object):
 

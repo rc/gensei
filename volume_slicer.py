@@ -66,7 +66,7 @@ def generate_slices(objects, box, options, output_filename_trunk):
             filename = '.'.join((output_filename_trunk, axis,
                                  suffix % islice, x3b_name,
                                  options.output_format))
-            output(islice, x3b, filename)
+            output(islice, x3b, filename, '...')
             output('computing')
             points[:,am[2]] = x3b
 
@@ -94,40 +94,8 @@ def generate_slices(objects, box, options, output_filename_trunk):
 
             output('saving')
             plt.savefig(filename, format=options.output_format, dpi=dpi)
-            output('done')
+            output('...done')
 ##        plt.show()
-
-    time_end = time.time()
-
-    # Save the statistics to a text file.
-    reportname = options.output_filename_trunk + '_info.txt'
-    output('saving report to %s' % reportname)
-    fd = open(reportname, 'w')
-    fd.write('started: %s\n' % time.ctime(time_start))
-    fd.write('elapsed: %.1f [s]\n' % (time_end - time_start))
-    fd.write('-'*50 + '\n')
-    fd.write('dimensions of specimen [%s]: (%f, %f, %f)\n' %\
-             ((options.units,) + options.dims))
-    fd.write('volume of specimen [(%s)^3]: %f\n' % (options.units, total_volume))
-    fd.write('number of slices: %d\n' % options.n_slice)
-    fd.write('slice distance [%s]: %f\n' % (options.units, dz))
-    fd.write('%d (required: %d) objects (ellipsiods):\n' % (len(objects),
-                                                            options.n_object))
-    fd.write('  volume fraction: %f\n' % options.fraction)
-    fd.write('  total volume [(%s)^3]: %f\n' % (options.units,
-                                                total_object_volume))
-    fd.write('  total volume error [(%s)^3]: %f\n' % (options.units,
-                                                      total_volume_error))
-    fd.write('  average volume [(%s)^3]: %f\n' % (options.units,
-                                                  average_object_volume))
-    fd.write('  length-to-width ratio: %f\n' % options.length_to_width)
-    fd.write('  semiaxes [%s]: (%f, %f, %f)\n' % ((options.units,) + semiaxes))
-    fd.write('-'*50 + '\n')
-    fd.write('run with adjusted (raw) options:\n')
-    fd.write(format_dict(options.__dict__, raw=orig_options))
-    fd.close()
-    output('done')
-
 
 usage = """%prog [options] [filename]
 
@@ -304,6 +272,23 @@ all files in that directory will be deleted""" % output_dir)
             os.remove(name)
 
     generate_slices(objects, box, options, cmdl_options.output_filename_trunk)
+
+    time_end = time.time()
+
+    # Save the statistics to a text file.
+    reportname = cmdl_options.output_filename_trunk + '_info.txt'
+    output('saving report to %s' % reportname)
+
+    fd = open(reportname, 'w')
+    fd.write('started: %s\n' % time.ctime(time_start))
+    fd.write('elapsed: %.1f [s]\n' % (time_end - time_start))
+    box.report(fd)
+    options.report(fd)
+    object_classes.report(fd)
+    objects.report(fd)
+    fd.close()
+
+    output('all done.')
 
 if __name__ == "__main__":
     main()
