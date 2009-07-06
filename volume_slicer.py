@@ -225,13 +225,15 @@ def main():
         filename = args[0]
         config = Config.from_file(filename, required=['objects', 'box'],
                                   optional=['options'])
-        config.override(cmdl_options, can_override)
     else:
         conf = {'objects' : default_objects,
                 'box' : default_box,
                 'options' : default_options}
         config = Config.from_conf(conf, required=['objects', 'box'],
                                   optional=['options'])
+
+    config.override(cmdl_options, can_override)
+
     if isinstance(config.box['dims'], str):
         config.box['dims'] = eval(config.box['dims'])
     if isinstance(config.box['resolution'], str):
