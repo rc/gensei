@@ -54,6 +54,12 @@ def spause( msg = None ):
     if ch == 'q':
         sys.exit()
 
+def ordered_iteritems(adict):
+    keys = adict.keys()
+    order = np.argsort(keys)
+    for ii in order:
+        key = keys[ii]
+        yield key, adict[key]
 
 _dashes = '-'*50
 

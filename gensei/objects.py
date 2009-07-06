@@ -1,6 +1,7 @@
 import time
 
-from gensei.base import np, output, Object, pause, assert_, _dashes
+from gensei.base import np, output, Object, pause, assert_, _dashes, \
+     ordered_iteritems
 from gensei.utils import get_random
 from gensei.ellipsoid import Ellipsoid
 
@@ -106,14 +107,19 @@ class Objects(Object, dict):
         print n_object
         
         object_volume = 0.0
+        stats_per_class = {}
         for key in self.names:
             obj_class = self[key]
+
+            stats = Object(volume=0.0)
+            stats_per_class[key] = stats
             
             for ii in xrange(n_object[key]):
                 output(('*** %s: %d ' % (key, ii)) + 50*'*')
 
                 obj = obj_class.copy(deep=True)
-
+                obj.init_trait('obj_class', key)
+                
                 t0 = time.clock()
                 ok = True
 
@@ -145,13 +151,39 @@ class Objects(Object, dict):
                     output('accepted:', obj)
                     objs[key + ('_%d' % ii)] = obj
                     object_volume += obj.volume
+                    stats.volume += obj.volume
                 else:
                     break
 
+        objs.stats_per_class = stats_per_class
         objs.init_trait('total_object_volume', object_volume)
         objs.init_trait('total_object_fraction', object_volume / box.volume)
+        objs.rough_volumes = {}
 
         return objs
+
+    def init_rough_volumes(self, axis):
+        names = list(set(obj.obj_class for obj in self.itervalues()))
+        self.rough_volumes[axis] = {}.fromkeys(names, 0.0)
+
+    def update_rough_volumes(self, mask, axis, delta, obj_class):
+        """
+        Parameters
+        ----------
+
+        mask : bool array
+            Slice mask, True where the object inside is.
+        axis : 'x', 'y' or 'z'
+            Axis perpendicular to the slices.
+        delta : float
+            Slice distance.
+        obj_class : str
+            Geometrical object class.
+        """
+        pixel_area = self.box.get_pixel_area(axis)
+
+        rvs = self.rough_volumes[axis]
+        rvs[obj_class] += pixel_area * np.sum(mask) * delta
 
     def format_statistics(self):
         units = self.box.units
@@ -162,7 +194,22 @@ class Objects(Object, dict):
                    % self.total_object_fraction)
         msg.append('  total object volume [(%s)^3]: %f' \
                    % (units, self.total_object_volume))
-
+        msg.append(_dashes)
+        msg.append('  per class:')
+        for axis, rvs in ordered_iteritems(self.rough_volumes):
+            msg.append('    axis: %s' % axis)
+            for key, val in ordered_iteritems(rvs):
+                stats = self.stats_per_class[key]
+                msg.append('      class: %s' % key)
+                msg.append('        true volume [(%s)^3]:  %f' \
+                           % (units, stats.volume))
+                msg.append('        rough volume [(%s)^3]: %f' \
+                           % (units, val))
+                msg.append('        true volume fraction:  %f' \
+                           % (stats.volume / self.box.volume))
+                msg.append('        rough volume fraction: %f' \
+                           % (val / self.box.volume))
+            
         return '\n'.join(msg)
 
     def report(self, filename):
