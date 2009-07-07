@@ -106,12 +106,11 @@ class Objects(Object, dict):
         n_object = self.init_counts(box.n_object)
         print n_object
         
-        object_volume = 0.0
         stats_per_class = {}
         for key in self.names:
             obj_class = self[key]
 
-            stats = Object(volume=0.0)
+            stats = Object(volume=0.0, surface=0.0)
             stats_per_class[key] = stats
             
             for ii in xrange(n_object[key]):
@@ -150,29 +149,50 @@ class Objects(Object, dict):
                 if ok:
                     output('accepted:', obj)
                     objs[key + ('_%d' % ii)] = obj
-                    object_volume += obj.volume
+
                     stats.volume += obj.volume
+
+                    stats.surface += obj.surface
                 else:
                     break
 
+        object_volume = object_surface = 0.0
+        for stats in stats_per_class.itervalues():
+            object_volume += stats.volume
+            object_surface += stats.surface
+
         objs.stats_per_class = stats_per_class
         objs.init_trait('total_object_volume', object_volume)
-        objs.init_trait('total_object_fraction', object_volume / box.volume)
-        objs.rough_volumes = {}
+        objs.init_trait('total_object_volume_fraction',
+                        object_volume / box.volume)
+        objs.init_trait('total_object_surface', object_surface)
+        objs.init_trait('total_object_surface_fraction',
+                        object_surface / box.volume)
+        objs.section_volumes = {}
+        objs.section_surfaces = {}
 
         return objs
 
-    def init_rough_volumes(self, axis):
-        names = list(set(obj.obj_class for obj in self.itervalues()))
-        self.rough_volumes[axis] = {}.fromkeys(names, 0.0)
-
-    def update_rough_volumes(self, mask, axis, delta, obj_class):
+    def init_section_based_data(self, axis):
+        """The section based data are stored per axis and object class as
+        follows: {axis : {obj_class : value, ...}, ...}
         """
+        names = list(set(obj.obj_class for obj in self.itervalues()))
+        self.section_volumes[axis] = {}.fromkeys(names, 0.0)
+        self.section_surfaces[axis] = {}.fromkeys(names, 0.0)
+
+    def update_section_based_data(self, mask, shape, axis, delta, obj_class):
+        """
+        Estimate volume and surface of object classes from their sections.
+        WARNING: Surface estimation is very crude!
+
         Parameters
         ----------
 
         mask : bool array
             Slice mask, True where the object inside is.
+        shape : tuple
+            Real 2D shape of the mask.
         axis : 'x', 'y' or 'z'
             Axis perpendicular to the slices.
         delta : float
@@ -182,8 +202,21 @@ class Objects(Object, dict):
         """
         pixel_area = self.box.get_pixel_area(axis)
 
-        rvs = self.rough_volumes[axis]
-        rvs[obj_class] += pixel_area * np.sum(mask) * delta
+        volumes = self.section_volumes[axis]
+        volumes[obj_class] += pixel_area * np.sum(mask) * delta
+
+        mask.shape = shape
+        pixel_sizes = self.box.get_pixel_sizes(axis)
+        grad0, grad1 = np.gradient(mask)
+        val0 = len(grad0[np.where(grad0)]) * pixel_sizes[0]
+        val1 = len(grad1[np.where(grad1)]) * pixel_sizes[1]
+##         if np.sum(mask):
+##             import pylab as pll
+##             pll.spy(grad)
+##             pll.show()
+##             import pdb; pdb.set_trace()
+        surfaces = self.section_surfaces[axis]
+        surfaces[obj_class] += 0.5 * (val0 + val1) * delta
 
     def format_statistics(self):
         units = self.box.units
@@ -191,24 +224,47 @@ class Objects(Object, dict):
         msg = [_dashes, 'statistics', _dashes]
 
         msg.append('  total object volume fraction: %f' \
-                   % self.total_object_fraction)
+                   % self.total_object_volume_fraction)
         msg.append('  total object volume [(%s)^3]: %f' \
                    % (units, self.total_object_volume))
+        msg.append('  total object surface fraction [1/(%s)]: %f' \
+                   % (units, self.total_object_surface_fraction))
+        msg.append('  total object surface [(%s)^2]: %f' \
+                   % (units, self.total_object_surface))
         msg.append(_dashes)
-        msg.append('  per class:')
-        for axis, rvs in ordered_iteritems(self.rough_volumes):
+        msg.append('  volumes per class:')
+        for axis, volumes in ordered_iteritems(self.section_volumes):
             msg.append('    axis: %s' % axis)
-            for key, val in ordered_iteritems(rvs):
+            for key, val in ordered_iteritems(volumes):
                 stats = self.stats_per_class[key]
                 msg.append('      class: %s' % key)
                 msg.append('        true volume [(%s)^3]:  %f' \
                            % (units, stats.volume))
-                msg.append('        rough volume [(%s)^3]: %f' \
+                msg.append('        section volume [(%s)^3]: %f' \
                            % (units, val))
+                msg.append('        volume error (section/real): %e' \
+                           % (val / stats.volume))
                 msg.append('        true volume fraction:  %f' \
                            % (stats.volume / self.box.volume))
-                msg.append('        rough volume fraction: %f' \
+                msg.append('        section volume fraction: %f' \
                            % (val / self.box.volume))
+        msg.append(_dashes)
+        msg.append('  surfaces per class:')
+        for axis, surfaces in ordered_iteritems(self.section_surfaces):
+            msg.append('    axis: %s' % axis)
+            for key, val in ordered_iteritems(surfaces):
+                stats = self.stats_per_class[key]
+                msg.append('      class: %s' % key)
+                msg.append('        true (approximate) surface [(%s)^2]:  %f' \
+                           % (units, stats.surface))
+                msg.append('        section surface [(%s)^2]: %f' \
+                           % (units, val))
+                msg.append('        surface error (section/real): %e' \
+                           % (val / stats.surface))
+                msg.append('        true (approximate) surface fraction:  %f' \
+                           % (stats.surface / self.box.volume))
+                msg.append('        section surface fraction [[1/(%s)]: %f' \
+                           % (units, val / self.box.volume))
             
         return '\n'.join(msg)
 

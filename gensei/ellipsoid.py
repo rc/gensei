@@ -30,13 +30,24 @@ class Ellipsoid(Object):
         """
         self.semiaxes = np.array(semiaxes, dtype=np.float64)
         self.volume = 4.0 / 3.0 * np.pi * np.prod(self.semiaxes)
+        self.surface = self.compute_approximate_surface()
         self.mtx0 = np.diag(1.0 / (self.semiaxes**2))
         self.is_placed = False
 
     def set_conf(self, conf, requested_conf):
         self.conf = conf
         self.requested_conf = requested_conf
-            
+
+    def compute_approximate_surface(self):
+        """Approximate Knud Thomsen's formula, where p about 1.6075 yields a
+        relative error of at most 1.061%."""
+        p = 1.6075
+        a, b, c = self.semiaxes
+        val = ((np.power(a, p) * np.power(b, p))
+                + (np.power(a, p) * np.power(c, p))
+                + (np.power(b, p) * np.power(c, p))) / 3.0
+        return 4.0 * np.pi * np.power(val, 1.0/p)
+        
     def setup_orientation(self):
         """
         Sets rot_axis, the direction vector of rotation axis defining the

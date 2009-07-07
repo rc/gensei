@@ -60,7 +60,7 @@ def generate_slices(objects, box, options, output_filename_trunk):
         fig.set_figheight(figsize[1])
         ax = fig.add_axes([0, 0, 1, 1])
 
-        objects.init_rough_volumes(axis)
+        objects.init_section_based_data(axis)
 
         x1b, x2b = pb[am[0]], pb[am[1]]
         for islice, x3b in enumerate(pb[am[2]]):
@@ -87,7 +87,8 @@ def generate_slices(objects, box, options, output_filename_trunk):
                 _mask = obj.contains(points[ii])
                 mask[ii] += _mask
                 cmask[ii[_mask]] = color
-                objects.update_rough_volumes(_mask, axis, delta, obj.obj_class)
+                objects.update_section_based_data(_mask, a.shape, axis, delta,
+                                                  obj.obj_class)
 
             assert_(np.alltrue(mask <= 1))
             output('drawing')
