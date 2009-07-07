@@ -180,6 +180,9 @@ class Objects(Object, dict):
         names = list(set(obj.obj_class for obj in self.itervalues()))
         self.section_volumes[axis] = {}.fromkeys(names, 0.0)
         self.section_surfaces[axis] = {}.fromkeys(names, 0.0)
+        for obj in self.itervalues():
+            obj.init_intersection_counters(axis)
+
 
     def update_section_based_data(self, mask, shape, axis, delta, obj_class):
         """
@@ -218,6 +221,24 @@ class Objects(Object, dict):
         surfaces = self.section_surfaces[axis]
         surfaces[obj_class] += 0.5 * (val0 + val1) * delta
 
+    def format_intersection_statistics(self, is_output=False):
+        msg = []
+        for axis, num in ordered_iteritems(self.box.n_slice):
+            msg.append('axis %s (%d sections):' % (axis, num))
+            ok = True
+            for key, obj in ordered_iteritems(self):
+                if not obj.has_intersection(axis):
+                    msg.append('  warning: object %s is not intersected'
+                               % key)
+                    ok = False
+            if ok:
+                msg.append('  all objects intersected by at least one section')
+
+        if is_output:
+            output('\n'.join(msg))
+
+        return msg
+
     def format_statistics(self):
         units = self.box.units
 
@@ -232,6 +253,17 @@ class Objects(Object, dict):
         msg.append('  total object surface [(%s)^2]: %f' \
                    % (units, self.total_object_surface))
         msg.append(_dashes)
+
+        msg.append('  missed objects per axis:')
+        missed = {}.fromkeys(self.box.n_slice.keys(), 0)
+        for obj in self.itervalues():
+            for axis, ints in obj.intersection_counters.iteritems():
+                missed[axis] += len(ints) == 0
+        for axis, val in ordered_iteritems(missed):
+            msg.append('    %s: %d' % (axis, val))
+        msg.extend(self.format_intersection_statistics())
+        msg.append(_dashes)
+
         msg.append('  volumes per class:')
         for axis, volumes in ordered_iteritems(self.section_volumes):
             msg.append('    axis: %s' % axis)
@@ -249,6 +281,7 @@ class Objects(Object, dict):
                 msg.append('        section volume fraction: %f' \
                            % (val / self.box.volume))
         msg.append(_dashes)
+
         msg.append('  surfaces per class:')
         for axis, surfaces in ordered_iteritems(self.section_surfaces):
             msg.append('    axis: %s' % axis)
@@ -266,7 +299,7 @@ class Objects(Object, dict):
                 msg.append('        section surface fraction [[1/(%s)]: %f' \
                            % (units, val / self.box.volume))
             
-        return '\n'.join(msg)
+        return msg
 
     def report(self, filename):
         fd = self.fd_open(filename)

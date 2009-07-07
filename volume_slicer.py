@@ -14,11 +14,7 @@ axis_map = {'x' : [1, 2, 0], 'y' : [2, 0, 1], 'z' : [0, 1, 2]}
 
 def get_points(box):
     # All points in the block.
-    n_slice = box.n_slice
-    if not isinstance(n_slice, dict):
-        n_slice = {'z' : int(n_slice)}
-
-    for axis, num in n_slice.iteritems():
+    for axis, num in ordered_iteritems(box.n_slice):
         am = axis_map[axis]
 
         shape = np.array((box.resolution[0], box.resolution[1], num))
@@ -89,6 +85,7 @@ def generate_slices(objects, box, options, output_filename_trunk):
                 cmask[ii[_mask]] = color
                 objects.update_section_based_data(_mask, a.shape, axis, delta,
                                                   obj.obj_class)
+                obj.store_intersection(_mask, axis, x3b)
 
             assert_(np.alltrue(mask <= 1))
             output('drawing')
@@ -278,8 +275,9 @@ all files in that directory will be deleted""" % output_dir)
             os.remove(name)
 
     generate_slices(objects, box, options, cmdl_options.output_filename_trunk)
-
     time_end = time.time()
+
+    objects.format_intersection_statistics(is_output=True)
 
     # Save the statistics to a text file.
     reportname = cmdl_options.output_filename_trunk + '_info.txt'
@@ -292,7 +290,7 @@ all files in that directory will be deleted""" % output_dir)
     box.report(fd)
     options.report(fd)
 
-    fd.write(objects.format_statistics()+'\n')
+    fd.write('\n'.join(objects.format_statistics())+'\n')
 
     object_classes.report(fd)
     objects.report(fd)

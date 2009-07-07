@@ -9,6 +9,9 @@ class Box(Object):
                         units=units, resolution=resolution,
                         n_object=n_object, n_slice=n_slice)
 
+        if not isinstance(self.n_slice, dict):
+            self.n_slice = {'z' : int(self.n_slice)}
+
         self.init_trait('volume', np.prod(self.dims))
 
     def get_pixel_sizes(self, axis):
