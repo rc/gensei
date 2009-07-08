@@ -222,17 +222,23 @@ class Objects(Object, dict):
         surfaces[obj_class] += 0.5 * (val0 + val1) * delta
 
     def format_intersection_statistics(self, is_output=False):
+        if is_output:
+            space = ''
+        else:
+            space = '  '
+
         msg = []
         for axis, num in ordered_iteritems(self.box.n_slice):
-            msg.append('axis %s (%d sections):' % (axis, num))
+            msg.append(space + 'axis %s (%d sections):' % (axis, num))
             ok = True
             for key, obj in ordered_iteritems(self):
                 if not obj.has_intersection(axis):
-                    msg.append('  warning: object %s is not intersected'
+                    msg.append(space + '  warning: object %s is not intersected'
                                % key)
                     ok = False
             if ok:
-                msg.append('  all objects intersected by at least one section')
+                msg.append(space
+                           + '  all objects intersected by at least one section')
 
         if is_output:
             output('\n'.join(msg))
