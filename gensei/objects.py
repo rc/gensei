@@ -244,13 +244,13 @@ class Objects(Object, dict):
 
         msg = [_dashes, 'statistics', _dashes]
 
-        msg.append('  total object volume fraction: %f' \
+        msg.append('  total object volume fraction:           %f' \
                    % self.total_object_volume_fraction)
-        msg.append('  total object volume [(%s)^3]: %f' \
+        msg.append('  total object volume [(%s)^3]:           %f' \
                    % (units, self.total_object_volume))
         msg.append('  total object surface fraction [1/(%s)]: %f' \
                    % (units, self.total_object_surface_fraction))
-        msg.append('  total object surface [(%s)^2]: %f' \
+        msg.append('  total object surface [(%s)^2]:          %f' \
                    % (units, self.total_object_surface))
         msg.append(_dashes)
 
@@ -270,16 +270,16 @@ class Objects(Object, dict):
             for key, val in ordered_iteritems(volumes):
                 stats = self.stats_per_class[key]
                 msg.append('      class: %s' % key)
-                msg.append('        true volume [(%s)^3]:  %f' \
+                msg.append('        true volume V1 [(%s)^3]:          %f' \
                            % (units, stats.volume))
-                msg.append('        section volume [(%s)^3]: %f' \
+                msg.append('        section-based volume V2 [(%s)^3]: %f' \
                            % (units, val))
-                msg.append('        volume error (section/real): %e' \
-                           % (val / stats.volume))
-                msg.append('        true volume fraction:  %f' \
+                msg.append('        true volume fraction:             %f' \
                            % (stats.volume / self.box.volume))
-                msg.append('        section volume fraction: %f' \
+                msg.append('        section-based volume fraction:    %f' \
                            % (val / self.box.volume))
+                msg.append('        ratio V2/V1 (accuracy estimate):  %f' \
+                           % (val / stats.volume))
         msg.append(_dashes)
 
         msg.append('  surfaces per class:')
@@ -288,16 +288,16 @@ class Objects(Object, dict):
             for key, val in ordered_iteritems(surfaces):
                 stats = self.stats_per_class[key]
                 msg.append('      class: %s' % key)
-                msg.append('        true (approximate) surface [(%s)^2]:  %f' \
+                msg.append('        true (approximate) surface S1 [(%s)^2]: %f' \
                            % (units, stats.surface))
-                msg.append('        section surface [(%s)^2]: %f' \
+                msg.append('        section-based surface S2 [(%s)^2]:      %f' \
                            % (units, val))
-                msg.append('        surface error (section/real): %e' \
-                           % (val / stats.surface))
-                msg.append('        true (approximate) surface fraction:  %f' \
+                msg.append('        true (approximate) surface fraction:    %f' \
                            % (stats.surface / self.box.volume))
-                msg.append('        section surface fraction [[1/(%s)]: %f' \
+                msg.append('        section surface fraction [[1/(%s)]:     %f' \
                            % (units, val / self.box.volume))
+                msg.append('        ratio S2/S1 (accuracy estimate):        %f' \
+                           % (val / stats.surface))
             
         return msg
 

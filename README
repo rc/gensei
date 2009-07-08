@@ -25,11 +25,11 @@ The true volume of the ellipsoids is calculated analytically as (4/3)(pi)abc,
 where a, b, c are the semiaxes of the ellipsoid that are known.
 
 The volume based on sections is estimated using the Cavalieri principle (see,
-for example, Howard and Reed (1998), [ref1]), i.e. the sum of areas of
+for example, [ref1], [ref2]), i.e. the sum of areas of
 the profiles of an object is multiplicated by the thickness of the sections.
 
 The surface of the ellipsoids is calculated according to the approximate Knud
-Thomsen's formula [ref2], which yields a relative error of at most 1.061%.
+Thomsen's formula [ref3], which yields a relative error of at most 1.061%.
 
 The surface based on sections is another approximative method, which tries to
 simulate the results of a three-dimensional reconstruction of the sections. The
@@ -39,8 +39,11 @@ WARNING: In the current version, the circumference computation is very crude!
 
 License: New BSD License, see the LICENSE file.
 
-[ref1] http://en.wikipedia.org/wiki/Cavalieri's_principle
-[ref2] http://en.wikipedia.org/wiki/Ellipsoid#Surface_area
+[ref1] Howard, C. V. and Reed, M. G. (1998). Unbiased Stereology: Three
+       Dimensional Measurement in Microscopy. Royal Microscopical Society,
+       Microscopy Handbook Series No.  41. Springer, New York.
+[ref2] http://en.wikipedia.org/wiki/Cavalieri's_principle
+[ref3] http://en.wikipedia.org/wiki/Ellipsoid#Surface_area
 
 Dependencies:
 -------------
