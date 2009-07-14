@@ -105,6 +105,8 @@ class Objects(Object, dict):
 
         n_object = self.init_counts(box.n_object)
         print n_object
+
+        objs.init_trait('n_object', {}.fromkeys(n_object.keys(), 0))
         
         stats_per_class = {}
         for key in self.names:
@@ -151,8 +153,9 @@ class Objects(Object, dict):
                     objs[key + ('_%d' % ii)] = obj
 
                     stats.volume += obj.volume
-
                     stats.surface += obj.surface
+
+                    objs.n_object[key] += 1
                 else:
                     break
 
@@ -215,7 +218,7 @@ class Objects(Object, dict):
         val1 = len(grad1[np.where(grad1)]) * pixel_sizes[1]
 ##         if np.sum(mask):
 ##             import pylab as pll
-##             pll.spy(grad)
+##             pll.spy(grad0+grad1)
 ##             pll.show()
 ##             import pdb; pdb.set_trace()
         surfaces = self.section_surfaces[axis]
@@ -250,6 +253,11 @@ class Objects(Object, dict):
 
         msg = [_dashes, 'statistics', _dashes]
 
+        msg.append('  number of objects per class:')
+        for key, num in ordered_iteritems(self.n_object):
+            msg.append('    %s: %d' % (key, num))
+        msg.append(_dashes)
+
         msg.append('  total object volume fraction:           %f' \
                    % self.total_object_volume_fraction)
         msg.append('  total object volume [(%s)^3]:           %f' \
@@ -268,6 +276,26 @@ class Objects(Object, dict):
         for axis, val in ordered_iteritems(missed):
             msg.append('    %s: %d' % (axis, val))
         msg.extend(self.format_intersection_statistics())
+        msg.append(_dashes)
+
+        ipac = {}.fromkeys(self.box.n_slice.keys())
+        for axis in ipac.iterkeys():
+            volumes = self.section_volumes[axis]
+            ipac[axis] = {}.fromkeys(volumes.keys(), 0)
+
+        for key, obj in self.iteritems():
+            for axis, ints in obj.intersection_counters.iteritems():
+                val = len(ints)
+                ipac[axis][obj.obj_class] += val
+
+        msg.append('  intersections per class:')
+        for axis, iac in ordered_iteritems(ipac):
+            msg.append('    axis: %s' % axis)
+            for key, ints in ordered_iteritems(iac):
+                msg.append('      %s: % 3d average: %5.2f for %d objects' \
+                           % (key, ints,
+                              float(ints) / self.n_object[key],
+                              self.n_object[key]))
         msg.append(_dashes)
 
         msg.append('  volumes per class:')
@@ -304,7 +332,7 @@ class Objects(Object, dict):
                            % (units, val / self.box.volume))
                 msg.append('        ratio S2/S1 (accuracy estimate):        %f' \
                            % (val / stats.surface))
-            
+
         return msg
 
     def report(self, filename):

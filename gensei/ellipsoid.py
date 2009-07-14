@@ -208,7 +208,7 @@ class Ellipsoid(Object):
             Object.report(self, fd, header=False)
             fd.write('intersections per axis:\n')
             for axis, ints in ordered_iteritems(self.intersection_counters):
-                fd.write('  %s: %s\n' % (axis, ints))
+                fd.write('  %s (%d): %s\n' % (axis, len(ints), ints))
         else:
             fd.write(format_dict(self.conf.get_dict(),
                                  raw=self.requested_conf.get_dict()))
