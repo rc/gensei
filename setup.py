@@ -1,20 +1,21 @@
 #!/usr/bin/env python
 """gensei (generate serial images)
 
-The script volume_slicer.py generates images corresponding to slices of a block
-specimen filled with ellipsoids. The ellipsoids have known properties such as
-the volume fraction within the block, dimensions (semiaxes a, b, c), volumes of
-individual ellipsoids, a length-to-width ratio and number.
+The script volume_slicer.py generates images corresponding to
+slices of a block specimen filled with ellipsoids. The ellipsoids have
+known properties such as the volume fraction within the block,
+dimensions (semiaxes a, b, c), volumes of individual ellipsoids, a
+length-to-width ratio and number.
 
-Although some basic parameters can be set using the command line options, it is
-preferable to describe the objects and generation rules in an input file - see
-'examples/basic.py', where four classes of objects are defined, and each
-configuration item is described.
+Although some basic parameters can be set using the command line
+options, it is preferable to describe the objects and generation rules
+in an input file - see 'examples/basic.py', where four classes of
+objects are defined, and each configuration item is described.
 
 Its purpose is to verify results, obtained by various software for
-reconstructing 3D data (e.g. a living tissue microstructure) given a set of 2D
-slices using usually stereological methods, on a dataset with well-defined and
-known properties.
+reconstructing 3D data (e.g. a living tissue microstructure) given a set
+of 2D slices using usually stereological methods, on a dataset with
+well-defined and known properties.
 """
 
 DOCLINES = __doc__.split("\n")
@@ -54,9 +55,9 @@ def configuration(parent_package='',top_path=None):
     config.add_subpackage('gensei')
 
     config.add_data_files(('gensei', ('README', 'LICENSE')))
-    config.add_data_files(('../../../share/gensei/examples', 'examples/*'))
+    config.add_data_files(('../../../share/gensei/examples', 'examples/*.py'))
 
-    config.get_version(version_variable=VERSION) # sets config.version
+    config.version = VERSION
     print config
     return config
 
@@ -79,7 +80,7 @@ def setup_package():
               maintainer_email = "cimrman3@ntc.zcu.cz",
               description = DOCLINES[0],
               long_description = "\n".join(DOCLINES[2:]),
-              url = "http://http://code.google.com/p/gensei",
+              url = "http://code.google.com/p/gensei",
               download_url = DOWNLOAD_URL,
               license = 'BSD',
               classifiers = filter(None, CLASSIFIERS.split('\n')),

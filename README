@@ -57,8 +57,23 @@ installing EPD [3] should get you running.
 [2] http://matplotlib.sourceforge.net
 [3] http://www.enthought.com/products/epd.php
 
+Installation:
+-------------
+
+1. Download either the latest release or a development snapshot from [4].
+2. Unpack the archive, go to the directory with volume_slicer.py script.
+3. Optionally, install gensei by
+
+   python setup.py install # system-wide
+   python setup.py install --root=<user directory> # local installation
+
+
+[4] http://code.google.com/p/gensei/
+
 Command Line Usage:
 -------------------
+
+Go to the source directory with volume_slicer.py script and try:
 
 - Linux (POSIX systems):
   - print help:
@@ -70,14 +85,13 @@ Command Line Usage:
   - run example, override some settings:
     $ ./volume_slicer.py examples/basic.py --resolution=100x100 --n-object=20 
 
-- Windows:
+- Windows (cmd):
   - print help:
-    $ python volume_slicer.py -h
+    python volume_slicer.py -h
   - run with default settings:
-    $ python volume_slicer.py
-    or
-    double click on the script
-  - for other usage, see above (Linux)
+    python volume_slicer.py
+  - for other usage, see above (Linux), just replace "./volume_slicer.py" by
+    "python volume_slicer.py"
 
 The script can be run also inside ipython using the %run command.
 
