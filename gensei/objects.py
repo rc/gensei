@@ -1,7 +1,7 @@
 import time
 
 from gensei.base import np, output, Object, pause, assert_, _dashes, \
-     ordered_iteritems
+     ordered_iteritems, dict_from_keys_init
 from gensei.utils import get_random
 from gensei.ellipsoid import Ellipsoid
 
@@ -54,6 +54,7 @@ class Objects(Object, dict):
 
             obj = reduce_to_fit(cls, obj_conf, box)
             obj.set_conf(obj_conf, obj_conf0)
+            obj.name = key
             
             output(obj._format(mode='set_only'))
 ##             print obj.conf
@@ -150,7 +151,9 @@ class Objects(Object, dict):
 
                 if ok:
                     output('accepted:', obj)
-                    objs[key + ('_%d' % ii)] = obj
+
+                    obj.name = key.replace('class', 'object') + ('_%d' % ii)
+                    objs[key + obj.name] = obj
 
                     stats.volume += obj.volume
                     stats.surface += obj.surface
@@ -176,18 +179,25 @@ class Objects(Object, dict):
 
         return objs
 
-    def init_section_based_data(self, axis):
+    def init_section_based_data(self, axis=None):
         """The section based data are stored per axis and object class as
         follows: {axis : {obj_class : value, ...}, ...}
         """
-        names = list(set(obj.obj_class for obj in self.itervalues()))
-        self.section_volumes[axis] = {}.fromkeys(names, 0.0)
-        self.section_surfaces[axis] = {}.fromkeys(names, 0.0)
-        for obj in self.itervalues():
-            obj.init_intersection_counters(axis)
+        if axis is None:
+            names = [obj.name for obj in self.itervalues()]
+            self.section_circumferences = dict_from_keys_init(names, list)
+
+        else:
+            names = list(set(obj.obj_class for obj in self.itervalues()))
+            self.section_volumes[axis] = {}.fromkeys(names, 0.0)
+            self.section_surfaces[axis] = {}.fromkeys(names, 0.0)
+
+            for obj in self.itervalues():
+                obj.init_intersection_counters(axis)
 
 
-    def update_section_based_data(self, mask, shape, axis, delta, obj_class):
+    def update_section_based_data(self, mask, shape, axis, delta,
+                                  islice, coor, obj):
         """
         Estimate volume and surface of object classes from their sections.
         WARNING: Surface estimation is very crude!
@@ -203,9 +213,14 @@ class Objects(Object, dict):
             Axis perpendicular to the slices.
         delta : float
             Slice distance.
-        obj_class : str
-            Geometrical object class.
+        islice : int
+            Index of the section.
+        coor : float
+            Coordinate of the section along the axis.
+        obj : str
+            Geometrical object.
         """
+        obj_class = obj.obj_class
         pixel_area = self.box.get_pixel_area(axis)
 
         volumes = self.section_volumes[axis]
@@ -216,13 +231,14 @@ class Objects(Object, dict):
         grad0, grad1 = np.gradient(mask)
         val0 = len(grad0[np.where(grad0)]) * pixel_sizes[0]
         val1 = len(grad1[np.where(grad1)]) * pixel_sizes[1]
-##         if np.sum(mask):
-##             import pylab as pll
-##             pll.spy(grad0+grad1)
-##             pll.show()
-##             import pdb; pdb.set_trace()
+        circumference = 0.5 * (val0 + val1)
+
+        self.section_circumferences[obj.name].append((axis, islice, coor,
+                                                      circumference))
+
         surfaces = self.section_surfaces[axis]
-        surfaces[obj_class] += 0.5 * (val0 + val1) * delta
+        surfaces[obj_class] += circumference * delta
+
 
     def format_intersection_statistics(self, is_output=False):
         if is_output:
@@ -332,6 +348,26 @@ class Objects(Object, dict):
                            % (units, val / self.box.volume))
                 msg.append('        ratio S2/S1 (accuracy estimate):        %f' \
                            % (val / stats.surface))
+        msg.append(_dashes)
+
+        msg.append('  circumferences per object:')
+        msg.append(_dashes)
+
+        keys = [point[:2] for point in self.points]
+        header = '|'.join([' %s:% 4d' % key for key in keys])
+        msg.append('            ' + '|' + header + '|')
+        coor = '|'.join(['%7.2f' % point[2] for point in self.points])
+        msg.append('coordinate  ' + '|' + coor + '|')
+        msg.append('-' * 12 + '--------' * len(keys))
+        for name, circs in ordered_iteritems(self.section_circumferences):
+            line = ['     '] * len(keys)
+            for circ in circs:
+                ic = keys.index(circ[:2])
+                line[ic] = '%7.2f' % circ[-1]
+            msg.append(name.ljust(12) + '|' + '|'.join(line) + '|')
+#            import pdb; pdb.set_trace()
+        msg.append(_dashes)
+
 
         return msg
 
@@ -347,7 +383,7 @@ class Objects(Object, dict):
 
         for key in self.names:
             obj_class = self[key]
-            msg = '\n'.join([_dashes, key, _dashes])
+            msg = '\n'.join([_dashes, obj_class.name, _dashes])
             fd.write(msg+'\n')
 
             obj_class.report(fd)

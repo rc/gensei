@@ -47,6 +47,8 @@ def generate_slices(objects, box, options, output_filename_trunk):
     figsize = plt.figaspect(aspect)
     dpi = resolution[0] / figsize[0]
 
+    objects.init_section_based_data()
+    objects.points = []
     for pb, points, delta, n_slice, axis, am in get_points(box):
         suffix = get_suffix(n_slice)
 
@@ -84,8 +86,10 @@ def generate_slices(objects, box, options, output_filename_trunk):
                 mask[ii] += _mask
                 cmask[ii[_mask]] = color
                 objects.update_section_based_data(_mask, a.shape, axis, delta,
-                                                  obj.obj_class)
+                                                  islice, x3b, obj)
                 obj.store_intersection(_mask, axis, x3b)
+
+            objects.points.append((axis, islice, x3b))
 
             assert_(np.alltrue(mask <= 1))
             output('drawing')

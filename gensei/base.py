@@ -61,6 +61,16 @@ def ordered_iteritems(adict):
         key = keys[ii]
         yield key, adict[key]
 
+def dict_from_keys_init(keys, seq_class=None):
+
+    if seq_class is None:
+        return {}.fromkeys(keys)
+    
+    out = {}
+    for key in keys:
+        out[key] = seq_class()
+    return out
+
 _dashes = '-'*50
 
 class Object(object):
