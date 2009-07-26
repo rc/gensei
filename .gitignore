@@ -3,6 +3,8 @@
 
 # Except:
 !gensei/*
+!doc/*.rst
+!doc/*.py
 !*.py
 
 # Ignored patterns.
