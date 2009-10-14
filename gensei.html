@@ -1,0 +1,218 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>gensei package &mdash; gensei v2009.1 documentation</title>
+    <link rel="stylesheet" href="_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '',
+        VERSION:     '2009.1',
+        COLLAPSE_MODINDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <link rel="top" title="gensei v2009.1 documentation" href="index.html" />
+    <link rel="next" title="base module" href="module_base.html" />
+    <link rel="prev" title="Welcome to gensei’s documentation!" href="index.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="modindex.html" title="Global Module Index"
+             accesskey="M">modules</a> |</li>
+        <li class="right" >
+          <a href="module_base.html" title="base module"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="index.html" title="Welcome to gensei’s documentation!"
+             accesskey="P">previous</a> |</li>
+        <li><a href="index.html">gensei v2009.1 documentation</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="module-gensei.utils">
+<h1>gensei package<a class="headerlink" href="#module-gensei.utils" title="Permalink to this headline">¶</a></h1>
+<ul>
+<li class="toctree-l1"><a class="reference external" href="module_base.html">base module</a></li>
+<li class="toctree-l1"><a class="reference external" href="module_box.html">box module</a></li>
+</ul>
+<dl class="function">
+<dt id="gensei.geometry.get_average_semiaxes">
+<tt class="descclassname">gensei.geometry.</tt><tt class="descname">get_average_semiaxes</tt><big>(</big><em>volume</em>, <em>length_to_width</em><big>)</big><a class="headerlink" href="#gensei.geometry.get_average_semiaxes" title="Permalink to this definition">¶</a></dt>
+<dd>Get semiaxes of an ellipsoid given its volume and length-to-width
+ratio.</dd></dl>
+
+<dl class="function">
+<dt id="gensei.geometry.make_axis_rotation_matrix">
+<tt class="descclassname">gensei.geometry.</tt><tt class="descname">make_axis_rotation_matrix</tt><big>(</big><em>direction</em>, <em>angle</em><big>)</big><a class="headerlink" href="#gensei.geometry.make_axis_rotation_matrix" title="Permalink to this definition">¶</a></dt>
+<dd><p>Create a rotation matrix corresponding to the rotation around a general
+axis by a specified angle.</p>
+<p>R = dd^T + cos(a) (I - dd^T) + sin(a) skew(d)</p>
+<p>Parameters:</p>
+<blockquote>
+angle : float a
+direction : array d</blockquote>
+</dd></dl>
+
+<dl class="function">
+<dt id="gensei.geometry.make_rotation_matrix_hc">
+<tt class="descclassname">gensei.geometry.</tt><tt class="descname">make_rotation_matrix_hc</tt><big>(</big><em>mtx</em><big>)</big><a class="headerlink" href="#gensei.geometry.make_rotation_matrix_hc" title="Permalink to this definition">¶</a></dt>
+<dd><p>Extend a rotation matrix to homogenous coordinates.</p>
+<dl class="docutils">
+<dt>R_hc = [[R, 0],</dt>
+<dd>[0, 1]]</dd>
+</dl>
+<p>Parameters:</p>
+<blockquote>
+mtx : 3 x 3 array R</blockquote>
+</dd></dl>
+
+<dl class="function">
+<dt id="gensei.geometry.make_translation_matrix_hc">
+<tt class="descclassname">gensei.geometry.</tt><tt class="descname">make_translation_matrix_hc</tt><big>(</big><em>point</em><big>)</big><a class="headerlink" href="#gensei.geometry.make_translation_matrix_hc" title="Permalink to this definition">¶</a></dt>
+<dd><p>Create a matrix whose application corresponds to translation to the
+point in homogenous coordinates.</p>
+<dl class="docutils">
+<dt>T_hc = [[1, 0, 0, x],</dt>
+<dd>[0, 1, 0, y],
+[0, 0, 1, z],
+[0, 0, 0, 1]]</dd>
+</dl>
+<p>Parameters:</p>
+<blockquote>
+point : array (x, y, z)</blockquote>
+</dd></dl>
+
+<dl class="function">
+<dt id="gensei.geometry.transform_to_pixels">
+<tt class="descclassname">gensei.geometry.</tt><tt class="descname">transform_to_pixels</tt><big>(</big><em>coors</em>, <em>max_coors</em>, <em>resolution</em><big>)</big><a class="headerlink" href="#gensei.geometry.transform_to_pixels" title="Permalink to this definition">¶</a></dt>
+<dd>Transform real coordinates (in [0, max_coors]) to pixel coordinates, given
+the figure resolution and max. coordinates (block dimensions).</dd></dl>
+
+<p>getch()-like unbuffered character reading from stdin on both Windows and Unix</p>
+<p>_Getch classes inspired by Danny Yoo, iskeydown() based on code by Zachary
+Pincus.</p>
+<dl class="function">
+<dt id="gensei.objects.reduce_to_fit">
+<tt class="descclassname">gensei.objects.</tt><tt class="descname">reduce_to_fit</tt><big>(</big><em>cls</em>, <em>obj_conf</em>, <em>box</em><big>)</big><a class="headerlink" href="#gensei.objects.reduce_to_fit" title="Permalink to this definition">¶</a></dt>
+<dd>Adjusts obj_conf parameters of object of class cls so that the circumscribed
+sphere radius fits in the box.</dd></dl>
+
+<dl class="function">
+<dt id="gensei.utils.format_dict">
+<tt class="descclassname">gensei.utils.</tt><tt class="descname">format_dict</tt><big>(</big><em>d</em>, <em>raw=None</em>, <em>indent=2</em><big>)</big><a class="headerlink" href="#gensei.utils.format_dict" title="Permalink to this definition">¶</a></dt>
+<dd><p>Format a dictionary for printing.</p>
+<p>Parameters:</p>
+<blockquote>
+<dl class="docutils">
+<dt>d <span class="classifier-delimiter">:</span> <span class="classifier">dict</span></dt>
+<dd>The dictionary.</dd>
+<dt>raw <span class="classifier-delimiter">:</span> <span class="classifier">dict</span></dt>
+<dd>The raw (unadjusted) dictionary to compare with.</dd>
+<dt>indent <span class="classifier-delimiter">:</span> <span class="classifier">int</span></dt>
+<dd>The indentation level.</dd>
+</dl>
+</blockquote>
+<p>Return:</p>
+<blockquote>
+<dl class="docutils">
+<dt>msg <span class="classifier-delimiter">:</span> <span class="classifier">string</span></dt>
+<dd>The string with dictionary&#8217;s key : val formatted in two columns.</dd>
+</dl>
+</blockquote>
+</dd></dl>
+
+<dl class="function">
+<dt id="gensei.utils.get_random">
+<tt class="descclassname">gensei.utils.</tt><tt class="descname">get_random</tt><big>(</big><em>ranges</em><big>)</big><a class="headerlink" href="#gensei.utils.get_random" title="Permalink to this definition">¶</a></dt>
+<dd>Get an array of random numbers 0 &lt;= a_i &lt; ranges[i].</dd></dl>
+
+<dl class="function">
+<dt id="gensei.utils.get_suffix">
+<tt class="descclassname">gensei.utils.</tt><tt class="descname">get_suffix</tt><big>(</big><em>n</em><big>)</big><a class="headerlink" href="#gensei.utils.get_suffix" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get suffix format string given a number of files.</p>
+<p>Examples:</p>
+<blockquote>
+n = 5 -&gt; &#8216;%01d&#8217;
+n = 15 -&gt; &#8216;%02d&#8217;
+n = 1005 -&gt; &#8216;%04d&#8217;</blockquote>
+</dd></dl>
+
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+            <h4>Previous topic</h4>
+            <p class="topless"><a href="index.html"
+                                  title="previous chapter">Welcome to gensei&#8217;s documentation!</a></p>
+            <h4>Next topic</h4>
+            <p class="topless"><a href="module_base.html"
+                                  title="next chapter">base module</a></p>
+            <h3>This Page</h3>
+            <ul class="this-page-menu">
+              <li><a href="_sources/gensei.txt"
+                     rel="nofollow">Show Source</a></li>
+            </ul>
+          <div id="searchbox" style="display: none">
+            <h3>Quick search</h3>
+              <form class="search" action="search.html" method="get">
+                <input type="text" name="q" size="18" />
+                <input type="submit" value="Go" />
+                <input type="hidden" name="check_keywords" value="yes" />
+                <input type="hidden" name="area" value="default" />
+              </form>
+              <p class="searchtip" style="font-size: 90%">
+              Enter search terms or a module, class or function name.
+              </p>
+          </div>
+          <script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="modindex.html" title="Global Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="module_base.html" title="base module"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="index.html" title="Welcome to gensei’s documentation!"
+             >previous</a> |</li>
+        <li><a href="index.html">gensei v2009.1 documentation</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+      &copy; Copyright 2009, Robert Cimrman.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 0.6.3.
+    </div>
+  </body>
+</html>
