@@ -148,7 +148,7 @@ class Objects(Object, dict):
                     output('accepted:', obj)
 
                     obj.name = key.replace('class', 'object') + ('_%d' % ii)
-                    objs[key + obj.name] = obj
+                    objs[key + ' ' + obj.name] = obj
 
                     stats.volume += obj.volume
                     stats.surface += obj.surface
