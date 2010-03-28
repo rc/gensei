@@ -60,3 +60,37 @@ class AnyObject(Object):
                                  raw=self.requested_conf.get_dict()))
             
         self.fd_close()
+
+    def intersects(self, other):
+        """
+        Test whether two objects intersect. Some objects may provide only an
+        approximate answer using a kind of bounding box. In that case -1 is
+        returned in place of 1 or 2, and the objects may not actually intersect
+        (but should be mutually very close).
+        
+        Returns
+        -------
+
+        flag : int
+             0 -> the objects are disjoint
+             1 -> touch in a single surface point
+             2 -> have common inner points
+            -1 -> may have common surface or inner points (inexact computation)
+            Some objects may return 2 instead of 1.
+        """
+        o1 = self.get_intersector()
+        o2 = other.get_intersector()
+
+        flag = o1.intesects_fast(o2)
+        if flag:
+            val = 0
+            for segment1 in o1.iter_segments():
+                for segment2 in o1.iter_segments():
+                    val = segment1.intersects(segment2)
+                    if val:
+                        break
+                if val:
+                    break
+            flag = val
+
+        return flag
