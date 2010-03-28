@@ -2,10 +2,11 @@ from scipy.linalg import eig, inv
 
 import gensei.geometry as gm
 from gensei.base import np, Object, pause, ordered_iteritems
+from gensei.any_object import AnyObject
 from gensei.utils import get_random, format_dict
 from gensei.geometry import get_average_semiaxes
 
-class Ellipsoid(Object):
+class Ellipsoid(AnyObject):
     traits = {
         'semiaxes' : '%s',
         'centre' : '%s',

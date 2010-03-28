@@ -2,18 +2,18 @@ import time
 
 from gensei.base import np, output, Object, pause, assert_, _dashes, \
      ordered_iteritems, dict_from_keys_init
+from gensei.any_object import AnyObject
 from gensei.utils import get_random
-from gensei.ellipsoid import Ellipsoid
 
-def reduce_to_fit(cls, obj_conf, box):
+def reduce_to_fit(obj_conf, box):
     """
-    Adjusts obj_conf parameters of object of class cls so that the circumscribed
+    Adjusts obj_conf parameters of object so that the circumscribed
     sphere radius fits in the box.
     """
     rtf = obj_conf.reduce_to_fit
 
     while 1:
-        obj = cls.from_conf(obj_conf, box)
+        obj = AnyObject.from_conf(obj_conf, box)
 
         r = obj.get_radius()
         rbox = 0.5 * box.dims.min()
@@ -44,15 +44,10 @@ class Objects(Object, dict):
         for key, val in conf.iteritems():
             output(('*** %s ' % key) + 50*'*')
 
-            try:
-                cls = eval(val['kind'].capitalize())
-            except NameError:
-                raise ValueError('unknown object kind! (%s)' % val['kind'])
-
             obj_conf = Object.objects_from_dict(val, name='obj_conf', flag=(1,))
             obj_conf0 = obj_conf.copy(deep=True)
 
-            obj = reduce_to_fit(cls, obj_conf, box)
+            obj = reduce_to_fit(obj_conf, box)
             obj.set_conf(obj_conf, obj_conf0)
             obj.name = key
             
