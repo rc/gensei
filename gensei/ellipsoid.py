@@ -1,9 +1,9 @@
 from scipy.linalg import eig, inv
 
 import gensei.geometry as gm
-from gensei.base import np, Object, pause, ordered_iteritems
+from gensei.base import np, Object, pause
 from gensei.any_object import AnyObject
-from gensei.utils import get_random, format_dict
+from gensei.utils import get_random
 from gensei.geometry import get_average_semiaxes
 
 class Ellipsoid(AnyObject):
@@ -35,10 +35,6 @@ class Ellipsoid(AnyObject):
         self.mtx0 = np.diag(1.0 / (self.semiaxes**2))
         self.is_placed = False
         self.intersection_counters = {}
-
-    def set_conf(self, conf, requested_conf):
-        self.conf = conf
-        self.requested_conf = requested_conf
 
     def compute_approximate_surface(self):
         """Approximate Knud Thomsen's formula, where p about 1.6075 yields a
@@ -77,30 +73,6 @@ class Ellipsoid(AnyObject):
         homogenous coordinates."""
         self.centre = np.array(centre, dtype=np.float64)
         self.mtx_hc = self._get_matrix_hc()
-
-    def init_intersection_counters(self, axis):
-        """Initialize for using store_intersection()."""
-        self.intersection_counters[axis] = []
-
-    def store_intersection(self, mask, axis, coor):
-        """
-        Store intersection if it occurred.
-        
-        Parameters
-        ----------
-
-        mask : bool array
-            Slice mask, True where the object inside is.
-        axis : 'x', 'y' or 'z'
-            Axis perpendicular to the slices.
-        coor: float
-            Coordinate along the axis, where intersection might occur.
-        """
-        if mask.any():
-            self.intersection_counters[axis].append(coor)
-
-    def has_intersection(self, axis):
-        return len(self.intersection_counters[axis]) > 0
 
     def _get_matrix_hc(self):
         """
@@ -201,18 +173,3 @@ class Ellipsoid(AnyObject):
                 return 1
         else:
             return 2
-
-    def report(self, filename):
-        fd = self.fd_open(filename)
-
-        if self.is_placed:
-            Object.report(self, fd, header=False)
-            fd.write('intersections per axis:\n')
-            for axis, ints in ordered_iteritems(self.intersection_counters):
-                fd.write('  %s (%d): %s\n' % (axis, len(ints), ints))
-        else:
-            fd.write(format_dict(self.conf.get_dict(),
-                                 raw=self.requested_conf.get_dict()))
-            
-        self.fd_close()
-        
