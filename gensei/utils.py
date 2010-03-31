@@ -1,5 +1,7 @@
 import numpy as np
 
+from gensei.base import ordered_iteritems
+
 def get_random(ranges):
     """Get an array of random numbers 0 <= a_i < ranges[i]."""
     ranges = np.atleast_1d(ranges)
@@ -44,7 +46,7 @@ def format_dict(d, raw=None, indent=2):
         raw = d
         
     msg = ''
-    for key, val in d.iteritems():
+    for key, val in ordered_iteritems(d):
         if val == raw[key]:
             msg += (' ' * indent) + ('%s : %s\n' % (key, val))
         else:
