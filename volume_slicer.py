@@ -177,6 +177,9 @@ help = {
     'timeout' :
     'timeout in seconds for attempts to place more ellipsiods into '\
     'the block [default: %s]' % defaults['timeout'],
+    'no_pauses' :
+    'do not wait for a key press between fitting, generation and slicing '\
+    'phases (= may overwrite previous slices without telling!)',
 }
 
 def main():
@@ -216,6 +219,9 @@ def main():
     parser.add_option("-t", "--timeout", type=float, metavar='float',
                       action="store", dest="timeout",
                       default=None, help=help['timeout'])
+    parser.add_option("", "--no-pauses",
+                      action="store_true", dest="no_pauses",
+                      default=False, help=help['no_pauses'])
     cmdl_options, args = parser.parse_args()
 
     can_override = set()
@@ -261,14 +267,17 @@ def main():
 ##                                                   total_object_volume))
 ##     output('average object volume [(%s)^3]: %.2f' % (options.units,
 ##                                                     average_object_volume))
-    spause(""">>> press a key to generate objects
+
+    if not cmdl_options.no_pauses:
+        spause(""">>> press a key to generate objects
 if it takes too long, press <Ctrl-C> and retry with different parameters""")
 
     objects = object_classes.place_objects(box, options)
     print objects
 
     output_dir = os.path.dirname(cmdl_options.output_filename_trunk)
-    spause(""">>> press a key to save slices in '%s'
+    if not cmdl_options.no_pauses:
+        spause(""">>> press a key to save slices in '%s'
 all files in that directory will be deleted""" % output_dir)
 
     if not os.path.exists(output_dir):
