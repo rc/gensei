@@ -17,7 +17,7 @@ objects = {
         # 'w'         white
         'color' : 'r',
         # volume fraction of the objects of this class
-        'fraction' : 0.02,
+        'fraction' : 0.2,
         # length-to-width ratio
         'length_to_width' : 8.0,
         # (0,1) allows to change the geometry of the objects when they can not
@@ -34,7 +34,7 @@ objects = {
     'class 2' : {
         'kind' : 'ellipsoid',
         'color' : (0.1, 0.2, 0.7),
-        'fraction' : 0.01,
+        'fraction' : 0.1,
         'length_to_width' : 1.0,
         'reduce_to_fit' : {'fraction' : 0.9},
         'centre' : 'random',
@@ -44,7 +44,7 @@ objects = {
     'class 3' : {
         'kind' : 'ellipsoid',
         'color' : (0.7, 1.0, 0.0),
-        'fraction' : 0.001,
+        'fraction' : 0.02,
         'length_to_width' : 30.0,
         'reduce_to_fit' : {'fraction' : 0.9},
         'centre' : 'random',
@@ -54,7 +54,7 @@ objects = {
     'class 4' : {
         'kind' : 'ellipsoid',
         'color' : (0.7, 1.0, 1.0),
-        'fraction' : 0.0001,
+        'fraction' : 0.01,
         'length_to_width' : 1.0,
         'reduce_to_fit' : {'fraction' : 0.9},
         'centre' : 'random',
@@ -75,7 +75,7 @@ box = {
     # number of objects to be generated within the box, either a number, or a
     # per class dictionary, for example:
     # 'n_object' : {'class 1' : 5, 'class 2' : 3, 'class 3' : 2, 'class 4' : 1},
-    'n_object' : 30,
+    'n_object' : 100,
     # number of slices generated - a dictionary of numbers for the
     # directions perpendicular to the Z, X, and Y axis, i.e. in the XY, YZ, and
     # XY planes, or a single integer:
