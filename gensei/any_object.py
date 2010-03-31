@@ -65,7 +65,7 @@ class AnyObject(Object):
                 fd.write('  %s (%d): %s\n' % (axis, len(ints), ints))
         else:
             fd.write(format_dict(self.conf.get_dict(),
-                                 raw=self.requested_conf.get_dict()))
+                                 raw=self.requested_conf.get_dict()) + '\n')
             
         self.fd_close()
 

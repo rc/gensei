@@ -51,4 +51,7 @@ def format_dict(d, raw=None, indent=2):
             msg += (' ' * indent) + ('%s : %s\n' % (key, val))
         else:
             msg += (' ' * indent) + ('%s : %s (%s)\n' % (key, val, raw[key]))
+
+    msg = msg[:-1]
+
     return msg
