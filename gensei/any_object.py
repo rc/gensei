@@ -20,8 +20,16 @@ class AnyObject(Object):
 
     def set_conf(self, conf, requested_conf):
         self.conf = conf
+        self.conf.n_object = 0
         self.requested_conf = requested_conf
 
+    def accepted(self):
+        """
+        Called when an object's placement is accepted.
+
+        Just adds one to the actual object class count.
+        """
+        self.conf.n_object += 1
 
     def init_intersection_counters(self, axis):
         """Initialize for using store_intersection()."""
