@@ -16,7 +16,7 @@ class Ellipsoid(AnyObject):
 
     @staticmethod
     def from_conf(conf, box):
-        volume = conf.fraction * box.volume
+        volume = conf.fraction * box.volume / conf.n_object
         semiaxes = get_average_semiaxes(volume, conf.length_to_width)
 
         obj = Ellipsoid(semiaxes)

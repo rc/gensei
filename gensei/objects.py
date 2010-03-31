@@ -3,7 +3,7 @@ import time
 from gensei.base import np, output, Object, pause, assert_, _dashes, \
      ordered_iteritems, dict_from_keys_init
 from gensei.any_object import AnyObject
-from gensei.utils import get_random
+from gensei.utils import get_random, format_dict
 
 def reduce_to_fit(obj_conf, box):
     """
@@ -37,14 +37,15 @@ class Objects(Object, dict):
     @staticmethod
     def from_conf(conf, box):
 
-##         objs = Objects(conf.keys(), conf.values())
-##         print objs
-        objs = Objects(is_placed=False)
+        objs = Objects(conf.keys(), conf.values(), is_placed=False)
+        n_object = objs.init_counts(box.n_object)
+        objs.init_trait('n_object_requested', n_object)
 
         for key, val in conf.iteritems():
             output(('*** %s ' % key) + 50*'*')
 
             obj_conf = Object.objects_from_dict(val, name='obj_conf', flag=(1,))
+            obj_conf.init_trait('n_object', objs.n_object_requested[key])
             obj_conf0 = obj_conf.copy(deep=True)
 
             obj = reduce_to_fit(obj_conf, box)
@@ -66,6 +67,7 @@ class Objects(Object, dict):
         Object.__init__(self, is_placed=is_placed)
 
         self.names = sorted(self.keys())
+        self.n_class = len(self.names)
 
     def __setitem__(self, key, item):
         super(Objects, self).__setitem__(key, item)
@@ -98,12 +100,8 @@ class Objects(Object, dict):
         """
         objs = Objects(is_placed=True)
         objs.box = box
+        objs.init_trait('n_object_requested', self.n_object_requested)
 
-        n_object = self.init_counts(box.n_object)
-        print n_object
-
-        objs.init_trait('n_object', {}.fromkeys(n_object.keys(), 0))
-        
         stats_per_class = {}
         for key in self.names:
             obj_class = self[key]
@@ -111,7 +109,7 @@ class Objects(Object, dict):
             stats = Object(volume=0.0, surface=0.0)
             stats_per_class[key] = stats
             
-            for ii in xrange(n_object[key]):
+            for ii in xrange(self.n_object_requested[key]):
                 output(('*** %s: %d ' % (key, ii)) + 50*'*')
 
                 obj = obj_class.copy(deep=True)
@@ -153,9 +151,16 @@ class Objects(Object, dict):
                     stats.volume += obj.volume
                     stats.surface += obj.surface
 
-                    objs.n_object[key] += 1
+                    obj_class.accepted()
                 else:
                     break
+
+        objs.init_trait('n_object',
+                        {}.fromkeys(self.n_object_requested.keys(), 0))
+        for key in self.names:
+            obj_class = self[key]
+            # This was updated in obj_class.accepted() call above.
+            objs.n_object[key] = obj_class.conf.n_object
 
         object_volume = object_surface = 0.0
         for stats in stats_per_class.itervalues():
@@ -265,8 +270,7 @@ class Objects(Object, dict):
         msg = [_dashes, 'statistics', _dashes]
 
         msg.append('  number of objects per class:')
-        for key, num in ordered_iteritems(self.n_object):
-            msg.append('    %s: %d' % (key, num))
+        msg.append(format_dict(self.n_object, self.n_object_requested, 4))
         msg.append(_dashes)
 
         msg.append('  total object volume fraction:           %f' \
