@@ -1,10 +1,9 @@
-from scipy.linalg import eig, inv
-
 import gensei.geometry as gm
 from gensei.base import np, Object, pause
 from gensei.any_object import AnyObject
 from gensei.utils import get_random
 from gensei.geometry import get_average_semiaxes
+from gensei.intersectors import EllipsoidIntersector
 
 class Ellipsoid(AnyObject):
     traits = {
@@ -35,6 +34,7 @@ class Ellipsoid(AnyObject):
         self.mtx0 = np.diag(1.0 / (self.semiaxes**2))
         self.is_placed = False
         self.intersection_counters = {}
+        self.intersector = EllipsoidIntersector()
 
     def compute_approximate_surface(self):
         """Approximate Knud Thomsen's formula, where p about 1.6075 yields a
@@ -50,7 +50,7 @@ class Ellipsoid(AnyObject):
         """
         Sets rot_axis, the direction vector of rotation axis defining the
         orientation in space, and rot_angle, the rotation angle around the
-        rotation axis according to self.conf.
+        rotation axis according to self.conf. Also update the intersector.
         """
         if self.conf.rot_axis == 'random':
             self.rot_axis = get_random((1.0, 1.0, 1.0))
@@ -68,11 +68,17 @@ class Ellipsoid(AnyObject):
 
         self.rot_mtx_hc = gm.make_rotation_matrix_hc(self.rot_mtx)
 
+        self.intersector.set_data(mtx=self.mtx)
+
     def set_centre(self, centre):
-        """Set the ellipsoid's centre and update its description matrix in
-        homogenous coordinates."""
+        """
+        Set the ellipsoid's centre and update its description matrix in
+        homogenous coordinates. Also update the intersector. 
+        """
         self.centre = np.array(centre, dtype=np.float64)
         self.mtx_hc = self._get_matrix_hc()
+
+        self.intersector.set_data(mtx_hc=self.mtx_hc, centre=self.centre)
 
     def _get_matrix_hc(self):
         """
@@ -104,28 +110,6 @@ class Ellipsoid(AnyObject):
     def get_radius(self):
         return self.semiaxes.max()
 
-    def get_origin_bounding_box(self):
-        """
-        Get the ellipsoid's bounding box as if centered at the origin.
-        
-        Return:
-            bbox : 3 x 2 array
-                The bounding box.
-        """
-        aux = np.sqrt(np.diag(inv(self.mtx)))[:,np.newaxis]
-        return np.c_[-aux, aux]
-
-    def get_bounding_box(self):
-        """
-        Get the ellipsoid's bounding box.
-        
-        Return:
-            bbox : 3 x 2 array
-                The bounding box.
-        """
-        obb = self.get_origin_bounding_box()
-        return obb + self.centre[:,np.newaxis]
-
     def __contains__(self, point):
         """
         Point x in ellipsoid A <=> x^T A x <= 1.
@@ -153,23 +137,5 @@ class Ellipsoid(AnyObject):
         
         return mask
 
-    def intersects(self, other):
-        """Test if two ellipsoids self and other intersect.
-
-        Return:
-            value : int
-                0 -> the ellipsoids are disjoint
-                1 -> touch in a single surface point
-                2 -> have common inner points
-        """
-        A, B = self.mtx_hc, other.mtx_hc
-        eigs = eig(np.dot(-inv(A), B), left=False, right=False).real
-        roots = np.sort(eigs)
-#        print roots
-        if roots[2] > 0:
-            if roots[2] != roots[3]:
-                return 0
-            else:
-                return 1
-        else:
-            return 2
+    def get_intersector(self):
+        return self.intersector

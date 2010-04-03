@@ -69,36 +69,60 @@ class AnyObject(Object):
             
         self.fd_close()
 
+    def get_origin_bounding_box(self):
+        """
+        Get the objects's axes-aligned bounding box as if centered at the
+        origin.
+        
+        Return:
+            bbox : 3 x 2 array
+                The bounding box.
+        """
+        return self.intersector.get_origin_bounding_box()
+
+    def get_aligned_bounding_box(self):
+        """
+        Get the objects's axes-aligned bounding box.
+        
+        Return:
+            bbox : 3 x 2 array
+                The bounding box.
+        """
+        return self.intersector.get_aligned_bounding_box()
+
     def intersects(self, other):
         """
         Test whether two objects intersect. Some objects may provide only an
-        approximate answer using a kind of bounding box. In that case -1 is
-        returned in place of 1 or 2, and the objects may not actually intersect
-        (but should be mutually very close).
+        approximate answer using a kind of bounding box (an intersector). In
+        that case -1 is returned in place of 1 or 2, and the objects may not
+        actually intersect (but should be mutually very close).
         
         Returns
         -------
-
         flag : int
-             0 -> the objects are disjoint
-             1 -> touch in a single surface point
-             2 -> have common inner points
-            -1 -> may have common surface or inner points (inexact computation)
+            -  0 -> the objects are disjoint
+            -  1 -> touch in a single surface point
+            -  2 -> have common inner points
+            - -1 -> may have common surface or inner points (inexact
+              computation)
             Some objects may return 2 instead of 1.
         """
         o1 = self.get_intersector()
         o2 = other.get_intersector()
 
-        flag = o1.intesects_fast(o2)
+        flag = o1.intersects_fast(o2)
+
         if flag:
             val = 0
             for segment1 in o1.iter_segments():
-                for segment2 in o1.iter_segments():
+                for segment2 in o2.iter_segments():
                     val = segment1.intersects(segment2)
                     if val:
                         break
                 if val:
                     break
             flag = val
+
+        ## print flag
 
         return flag

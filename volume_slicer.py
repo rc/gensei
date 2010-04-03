@@ -75,7 +75,7 @@ def generate_slices(objects, box, options, output_filename_trunk):
             for obj in objects.itervalues():
                 color = np.array(colorConverter.to_rgb(obj.conf.color))
 
-                bbox = obj.get_bounding_box()[am]
+                bbox = obj.get_aligned_bounding_box()[am]
                 
                 ix1 = np.where((x1b > bbox[0,0]) & (x1b < bbox[0,1]))[0]
                 ix2 = np.where((x2b > bbox[1,0]) & (x2b < bbox[1,1]))[0]

@@ -131,15 +131,14 @@ class Objects(Object, dict):
                     centre = get_random(rbox) + bbox[:,1]
                     obj.set_centre(centre)
                     obj.is_placed = True
-##                     print obj
                     
                     for ip, prev in enumerate(objs.itervalues()):
                         bad = prev.intersects(obj)
-##                         print '%d. intersects: %d' % (ip, bad)
+                        ## print '%d. intersects: %d' % (ip, bad)
                         if bad:
                             break
                     else:
-##                         print 'ok'
+                        ## print 'ok'
                         break
 
                 if ok:
