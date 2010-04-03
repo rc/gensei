@@ -4,20 +4,13 @@ gensei package
 .. toctree::
    :maxdepth: 3
 
-   module_base
-   module_box
+   src/gensei/base
+   src/gensei/box
+   src/gensei/any_object
+   src/gensei/ellipsoid
+   src/gensei/geometry
+   src/gensei/getch
+   src/gensei/intersectors
+   src/gensei/objects
+   src/gensei/utils
 
-.. automodule:: gensei.ellipsoid
-   :members:
-   
-.. automodule:: gensei.geometry
-   :members:
-   
-.. automodule:: gensei.getch
-   :members:
-   
-.. automodule:: gensei.objects
-   :members:
-
-.. automodule:: gensei.utils
-   :members:
