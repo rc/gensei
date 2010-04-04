@@ -4,13 +4,15 @@ gensei package
 .. toctree::
    :maxdepth: 3
 
+   src/gensei/any_object
    src/gensei/base
    src/gensei/box
-   src/gensei/any_object
+   src/gensei/cylinder
    src/gensei/ellipsoid
    src/gensei/geometry
    src/gensei/getch
    src/gensei/intersectors
    src/gensei/objects
+   src/gensei/single_object
    src/gensei/utils
 
