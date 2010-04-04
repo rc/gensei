@@ -1,5 +1,6 @@
+import gensei.geometry as gm
 from gensei.base import np, Object, pause, ordered_iteritems
-from gensei.utils import format_dict
+from gensei.utils import get_random, format_dict
 
 class AnyObject(Object):
     """
@@ -22,6 +23,25 @@ class AnyObject(Object):
         self.conf = conf
         self.conf.n_object = 0
         self.requested_conf = requested_conf
+
+    def setup_orientation(self):
+        """
+        Sets rot_axis, the direction vector of rotation axis defining the
+        orientation in space, and rot_angle, the rotation angle around the
+        rotation axis according to self.conf.
+        """
+        if self.conf.rot_axis == 'random':
+            self.rot_axis = get_random((1.0, 1.0, 1.0))
+        else:
+            raise NotImplementedError
+        
+        if self.conf.rot_angle == 'random':
+            self.rot_angle = get_random(np.pi)
+        else:
+            raise NotImplementedError
+
+        self.rot_mtx = gm.make_axis_rotation_matrix(self.rot_axis,
+                                                    self.rot_angle)
 
     def accepted(self):
         """

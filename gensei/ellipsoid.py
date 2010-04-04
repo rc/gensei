@@ -1,7 +1,6 @@
 import gensei.geometry as gm
 from gensei.base import np, Object, pause
 from gensei.any_object import AnyObject
-from gensei.utils import get_random
 from gensei.geometry import get_average_semiaxes
 from gensei.intersectors import EllipsoidIntersector
 
@@ -52,18 +51,8 @@ class Ellipsoid(AnyObject):
         orientation in space, and rot_angle, the rotation angle around the
         rotation axis according to self.conf. Also update the intersector.
         """
-        if self.conf.rot_axis == 'random':
-            self.rot_axis = get_random((1.0, 1.0, 1.0))
-        else:
-            raise NotImplementedError
-        
-        if self.conf.rot_angle == 'random':
-            self.rot_angle = get_random(np.pi)
-        else:
-            raise NotImplementedError
+        AnyObject.setup_orientation(self)
 
-        self.rot_mtx = gm.make_axis_rotation_matrix(self.rot_axis,
-                                                    self.rot_angle)
         self.mtx = np.dot(self.rot_mtx.T, np.dot(self.mtx0, self.rot_mtx))
 
         self.rot_mtx_hc = gm.make_rotation_matrix_hc(self.rot_mtx)
