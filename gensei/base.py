@@ -13,6 +13,12 @@ def import_file(filename):
     mod = __import__(name)
     return mod
 
+def is_sequence(obj):
+    if issubclass(obj.__class__, tuple) or issubclass(obj.__class__, list):
+        return True
+    else:
+        return False
+
 def assert_(condition):
     if not condition:
         raise ValueError('assertion failed!')
