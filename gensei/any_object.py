@@ -98,6 +98,9 @@ class AnyObject(Object):
             
         self.fd_close()
 
+    def get_intersector(self):
+        return self.intersector
+
     def get_origin_bounding_box(self):
         """
         Get the objects's axes-aligned bounding box as if centered at the

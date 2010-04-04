@@ -74,6 +74,3 @@ class Ellipsoid(SingleObject):
 ##         print np.alltrue(mask == mask2)
         
         return mask
-
-    def get_intersector(self):
-        return self.intersector

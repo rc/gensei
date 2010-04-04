@@ -80,6 +80,3 @@ class Cylinder(SingleObject):
         mask = (np.abs(aux[2,:]) <= (0.5 * self.height)) & (r <= self.radius)
 
         return mask
-
-    def get_intersector(self):
-        return self.intersector
