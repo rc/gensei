@@ -10,6 +10,7 @@ class AnyObject(Object):
     @staticmethod
     def from_conf(conf, box):
         from gensei.ellipsoid import Ellipsoid
+        from gensei.cylinder import Cylinder
 
         try:
             cls = eval(conf.kind.capitalize())
