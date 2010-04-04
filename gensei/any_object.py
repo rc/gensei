@@ -1,5 +1,5 @@
 import gensei.geometry as gm
-from gensei.base import np, Object, pause, ordered_iteritems
+from gensei.base import np, Object, pause, ordered_iteritems, is_sequence
 from gensei.utils import get_random, format_dict
 
 class AnyObject(Object):
@@ -32,11 +32,19 @@ class AnyObject(Object):
         """
         if self.conf.rot_axis == 'random':
             self.rot_axis = get_random((1.0, 1.0, 1.0))
+
+        elif is_sequence(self.conf.rot_axis):
+            self.rot_axis = np.array(self.conf.rot_axis, dtype=np.float64)
+
         else:
             raise NotImplementedError
         
         if self.conf.rot_angle == 'random':
             self.rot_angle = get_random(np.pi)
+
+        elif isinstance(self.conf.rot_angle, float):
+            self.rot_angle = self.conf.rot_angle
+
         else:
             raise NotImplementedError
 
