@@ -13,7 +13,7 @@ class AnyObject(Object):
         try:
             cls = eval(conf.kind.capitalize())
         except NameError:
-            raise ValueError('unknown object kind! (%s)' % val['kind'])
+            raise ValueError('unknown object kind! (%s)' % conf.kind)
         
         obj = cls.from_conf(conf, box)
         return obj
