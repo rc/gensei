@@ -63,6 +63,15 @@ def get_average_semiaxes(volume, length_to_width):
     a = length_to_width * b
     return a, b, c
 
+def get_cylinder_shape(volume, length_to_width):
+    """
+    Get radius r and height h of a cylinder given its volume and
+    length-to-width ratio h / 2r.
+    """
+    r = np.power(volume / (2.0 * np.pi * length_to_width), 1.0/3.0)
+    h = length_to_width * 2.0 * r
+    return r, h
+
 def transform_to_pixels(coors, max_coors, resolution):
     """
     Transform real coordinates (in [0, max_coors]) to pixel coordinates, given
