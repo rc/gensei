@@ -90,7 +90,11 @@ def generate_slices(objects, box, options, output_filename_trunk):
 
             objects.points.append((axis, islice, x3b))
 
-            assert_(np.alltrue(mask <= 1))
+            try:
+                assert_(np.alltrue(mask <= 1))
+            except:
+                import pdb; pdb.set_trace()
+
             output('drawing')
             ax.cla()
             ax.set_axis_off()
