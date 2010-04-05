@@ -1,11 +1,75 @@
 import numpy as np
 
-from gensei.base import ordered_iteritems
+from gensei.base import is_sequence, ordered_iteritems
 
-def get_random(ranges):
-    """Get an array of random numbers 0 <= a_i < ranges[i]."""
-    ranges = np.atleast_1d(ranges)
-    return ranges * np.random.random(len(ranges))
+def get_random(ranges0, ranges1):
+    """
+    Get an array of random numbers `a` with the uniform distribution so that
+    `ranges0[i] <= a[i] < ranges1[i]`.
+
+    Returns
+    -------
+    a : array
+        The array of random numbers.
+    """
+    ranges0 = np.atleast_1d(ranges0)
+    return (ranges1 - ranges0) * np.random.random(len(ranges0)) + ranges0
+
+def evaluate(val, shape=None):
+    """
+    Evaluate a single value or a sequence of values.
+
+    The values can be have a uniform (keyword 'random') or normal (keyword
+    'normal') random distribution.
+
+    Parameters
+    ----------
+    val : config value
+        The value to be evaluated. It can be one of:
+
+        - list: evaluate() is called recursively for each item
+        - tuple:
+            - ('random', [min. values], [max. values]) (uniform)
+            - ('random', min. value, max. value)
+            - ('normal', mean, standard deviation)
+        - 'random' : random value(s) in [0, 1)
+        - other values are returned as they are.
+    shape : tuple, optional
+        Shape of the data when `val` is 'random'.
+
+    Returns
+    -------
+    out : data
+        The evaluated data.
+    """
+    if isinstance(val, list):
+        out = []
+        for sub_val in val:
+            out.append(evaluate(sub_val))
+        out = np.array(out, dtype=np.float64)
+
+    elif isinstance(val, tuple):
+        if val[0] == 'normal':
+            out = np.random.normal(val[1], val[2])
+
+        elif val[0] == 'random':
+            if is_sequence(val[1]):
+                out = get_random(val[1], val[2])
+
+            else:
+                out = (val[2] - val[1]) * np.random.random() + val[1]
+
+        else:
+            raise ValueError('unsupported value type! (%s)' % val[0])
+
+    elif val == 'random':
+        out = np.random.random(shape)
+
+    else:
+        out = val
+
+    return out
+
 
 def get_suffix(n):
     """Get suffix format string given a number of files.
