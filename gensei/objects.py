@@ -125,10 +125,15 @@ class Objects(Object, dict):
                         break
 
                     obj.setup_orientation()
-                    bbox = obj.get_origin_bounding_box()
 
-                    rbox = box.dims - 2 * bbox[:,1]
-                    centre = get_random(rbox) + bbox[:,1]
+                    bbox = obj.get_origin_bounding_box()
+                    ## This "fixes" the bounding box until exact bounding boxes
+                    ## for all kinds of objects are implemented.
+                    r = obj.get_radius()
+                    bbox[:,1] = np.minimum(r, bbox[:,1])
+                    assert_((bbox[:,1] < (0.5 * box.dims)).all())
+                    
+                    centre = get_random(bbox[:,1], box.dims - bbox[:,1])
                     obj.set_centre(centre)
                     obj.is_placed = True
                     

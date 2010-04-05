@@ -1,6 +1,6 @@
 import gensei.geometry as gm
 from gensei.base import np, Object, pause, ordered_iteritems, is_sequence
-from gensei.utils import get_random, format_dict
+from gensei.utils import evaluate, format_dict
 
 class AnyObject(Object):
     """
@@ -31,23 +31,8 @@ class AnyObject(Object):
         orientation in space, and rot_angle, the rotation angle around the
         rotation axis according to self.conf.
         """
-        if self.conf.rot_axis == 'random':
-            self.rot_axis = get_random((1.0, 1.0, 1.0))
-
-        elif is_sequence(self.conf.rot_axis):
-            self.rot_axis = np.array(self.conf.rot_axis, dtype=np.float64)
-
-        else:
-            raise NotImplementedError
-        
-        if self.conf.rot_angle == 'random':
-            self.rot_angle = get_random(np.pi)
-
-        elif isinstance(self.conf.rot_angle, float):
-            self.rot_angle = self.conf.rot_angle
-
-        else:
-            raise NotImplementedError
+        self.rot_axis = evaluate(self.conf.rot_axis, shape=(3,))
+        self.rot_angle = evaluate(self.conf.rot_angle)
 
         self.rot_mtx = gm.make_axis_rotation_matrix(self.rot_axis,
                                                     self.rot_angle)
