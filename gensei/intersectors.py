@@ -42,13 +42,24 @@ class Intersector(Object):
         sbox = self.get_aligned_bounding_box()
         obox = other.get_aligned_bounding_box()
 
-        val = np.empty((8, 3), dtype=np.float64)
+        flag = False
+        val = np.empty((3,), dtype=np.float64)
         for ii, ib in enumerate(self.ibox):
-            val[ii,0] = sbox[0, ib[0]]
-            val[ii,1] = sbox[1, ib[1]]
-            val[ii,2] = sbox[2, ib[2]]
+            val[0] = sbox[0, ib[0]]
+            val[1] = sbox[1, ib[1]]
+            val[2] = sbox[2, ib[2]]
+            flag = np.any((obox[:,0] <= val) & (val <= obox[:,1]))
+            if flag:
+                break
 
-        flag = np.any((obox[:,0] <= val) & (val <= obox[:,1]))
+        else:
+            for ii, ib in enumerate(self.ibox):
+                val[0] = obox[0, ib[0]]
+                val[1] = obox[1, ib[1]]
+                val[2] = obox[2, ib[2]]
+                flag = np.any((sbox[:,0] <= val) & (val <= sbox[:,1]))
+                if flag:
+                    break
 
         return flag
 
