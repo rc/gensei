@@ -51,7 +51,8 @@ class Cylinder(SingleObject):
         return mtx
         
     def get_radius(self):
-        return max(0.5 * self.height, self.radius)
+        r = np.sqrt((0.5 * self.height)**2 + self.radius**2)
+        return r
 
     def __contains__(self, point):
         """
