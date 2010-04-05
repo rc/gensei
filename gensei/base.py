@@ -5,12 +5,40 @@ import types
 
 from getch import getch
 
-def import_file(filename):
+def import_file(filename, package_name=None):
+    """
+    Import a file as a module. The module is explicitly reloaded to
+    prevent undesirable interactions.
+    """
     path = os.path.dirname(filename)
+
     if not path in sys.path:
-        sys.path.append(path)
+        sys.path.append( path )
+        remove_path = True
+
+    else:
+        remove_path = False
+
     name = os.path.splitext(os.path.basename(filename))[0]
-    mod = __import__(name)
+
+    if name in sys.modules:
+        force_reload = True
+    else:
+        force_reload = False
+
+
+    if package_name is not None:
+        mod = __import__('.'.join((package_name, name)), fromlist=[name])
+
+    else:
+        mod = __import__(name)
+
+    if force_reload:
+        reload(mod)
+
+    if remove_path:
+        sys.path.pop(-1)
+
     return mod
 
 def is_sequence(obj):
