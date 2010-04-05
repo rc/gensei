@@ -9,10 +9,10 @@ objects = {
         'kind' : 'ellipsoid',
         'color' : 'r',
         'fraction' : 0.1,
-        'length_to_width' : 8.0,
+        'length_to_width' : 2.0,
         'reduce_to_fit' : {'length_to_width' : 0.9},
         'centre' : 'random',
-        'rot_axis' : 'random',
+        'rot_axis' : ('random', [0.0, 0.0, 0.0], [1.0, 1.0, 1.0]),
         'rot_angle': 'random',
     },
     'class 2' : {
@@ -22,10 +22,9 @@ objects = {
         'length_to_width' : 15.0,
         'reduce_to_fit' : {'fraction' : 0.9},
         'centre' : 'random',
-        ## 'rot_axis' : [1.0, 1.0, 0.0],
-        ## 'rot_angle': np.pi/2,
-        'rot_axis': 'random',
-        'rot_angle': 'random',
+        # Cylinders should be approximately aligned with the x axis.
+        'rot_axis': [('normal', 0.0, 0.1), 1.0, ('random', -0.2, 0.2)],
+        'rot_angle': np.pi/2,
     },
 }
 #--------End of settings of the properties of objects-----------
@@ -40,8 +39,7 @@ box = {
     'resolution' : (300, 300),
     # number of objects to be generated within the box, either a number, or a
     # per class dictionary, for example:
-    # 'n_object' : {'class 1' : 5, 'class 2' : 3, 'class 3' : 2, 'class 4' : 1},
-    'n_object' : 30,
+    'n_object' : {'class 1' : 40, 'class 2' : 10},
     # number of slices generated - a dictionary of numbers for the
     # directions perpendicular to the Z, X, and Y axis, i.e. in the XY, YZ, and
     # XY planes, or a single integer:
