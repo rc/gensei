@@ -7,8 +7,7 @@ from matplotlib.colors import colorConverter
 
 from gensei.base import *
 from gensei import Objects, Box
-from gensei.utils import get_random, get_suffix
-from gensei.geometry import get_average_semiaxes
+from gensei.utils import get_suffix
 
 axis_map = {'x' : [1, 2, 0], 'y' : [2, 0, 1], 'z' : [0, 1, 2]}
 
