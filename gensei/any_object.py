@@ -9,12 +9,18 @@ class AnyObject(Object):
 
     @staticmethod
     def from_conf(conf, box):
-        from gensei.ellipsoid import Ellipsoid
-        from gensei.cylinder import Cylinder
-
+        """
+        Return an object class instance, based on `conf.kind`.
+        The `conf.kind` should correspond to a module in the 'gensei'
+        package directory. That module should contain a class named as the
+        capitalized `conf.kind`, for example::
+            conf.kind = 'ellipsoid'
+        means the module `gensei.ellipsoid` with the `Ellipsoid` class.
+        """
         try:
-            cls = eval(conf.kind.capitalize())
-        except NameError:
+            mod = __import__('gensei.' + conf.kind, fromlist=conf.kind)
+            cls = getattr(mod, conf.kind.capitalize())
+        except (ImportError, AttributeError):
             raise ValueError('unknown object kind! (%s)' % conf.kind)
         
         obj = cls.from_conf(conf, box)
