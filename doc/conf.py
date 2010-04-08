@@ -43,7 +43,7 @@ master_doc = 'index'
 
 # General information about the project.
 project = u'gensei'
-copyright = u'2009, Robert Cimrman'
+copyright = u'2009, Robert Cimrman, Zbyněk Tonar, Petra Kochová'
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the
@@ -178,7 +178,7 @@ htmlhelp_basename = 'genseidoc'
 # (source start file, target name, title, author, documentclass [howto/manual]).
 latex_documents = [
   ('index', 'gensei.tex', u'gensei Documentation',
-   u'Robert Cimrman', 'manual'),
+   u'Robert Cimrman, Zbyněk Tonar, Petra Kochová', 'manual'),
 ]
 
 # The name of an image file (relative to this directory) to place at the top of

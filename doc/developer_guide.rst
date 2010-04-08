@@ -1,5 +1,10 @@
+Developer Guide
+===============
+
+This section purports to document the *gensei* internals.
+
 gensei package
-==============
+--------------
 
 .. toctree::
    :maxdepth: 3
