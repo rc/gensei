@@ -3,6 +3,13 @@ Developer Guide
 
 This section purports to document the *gensei* internals.
 
+volume_slicer.py script
+------------------------
+
+.. automodule:: volume_slicer
+   :members:
+   :undoc-members:
+
 gensei package
 --------------
 

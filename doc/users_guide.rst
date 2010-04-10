@@ -39,7 +39,6 @@ Gundersen and Jensen (1987), Gundersen et al. (1988a), Gundersen et
 al. (1988b), Howard and Reed (1998), Mandarim-de-Lacerda (2003), Mouton (2001),
 Nyengaard (1999), Nyengaard and Gundersen (2006), Russ and Dehoff (1999).
 
-
 References
 ^^^^^^^^^^
 Gundersen and Jensen (1987): Gundersen, H. J. G. and Jensen, E. B. (1987). The
@@ -91,6 +90,58 @@ Weibel (1981): Weibel, E. R. (1981). Stereological methods in cell biology:
 Where are we - where are we going? The Journal of Histochemistry and
 Cytochemistry,
 29(9):1043-1052. (http://www.jhc.org/cgi/reprint/29/9/1043)
+
+Basic usage
+-----------
+
+The script *volume_slicer.py* can be used to place objects of known (given)
+geometrical and statistical properties into a (virtual) 3D box and then
+generate the slices. It can be called as::
+
+    Usage: volume_slicer.py [options] [filename]                                 
+
+    If an input file is given, the object class options have no effect.
+
+    Default option values do _not_ override the input file options.
+
+
+    Options:
+      --version             show program's version number and exit
+      -h, --help            show this help message and exit       
+      -o filename           basename of output file(s) [default: ./slices/slice]
+      -f format, --format=format
+                            output file format (supported by the matplotlib
+                            backend used) [default: png]
+      -n int, --n-slice=int
+                            number of slices to generate [default: 21]
+      -d dims, --dims=dims  dimensions of specimen in units given by --units
+                            [default: (10, 10, 10)]
+      -u units, --units=units
+                            length units to use [default: mm]
+      -r resolution, --resolution=resolution
+                            figure resolution [default: 600x600]
+      --fraction=float      volume fraction of objects [default: 0.1]
+      --fraction-reduction=float
+                            volume fraction reduction factor [default: 0.9]
+      --length-to-width=float
+                            length-to-width ratio of objects [default: 8.0]
+      --n-object=int        number of objects [default: 10]
+      -t float, --timeout=float
+                            timeout in seconds for attempts to place more
+                            ellipsoids into the block [default: 5.0]
+      --no-pauses           do not wait for a key press between fitting,
+                            generation and slicing phases (= may overwrite
+                            previous slices without telling!)
+
+Further options can be set in an input file, see below.
+
+Example input file
+^^^^^^^^^^^^^^^^^^
+
+This file defines four classes of ellipsoids, the box and other necessary
+options.
+
+.. literalinclude:: ../examples/basic.py
 
 Examples
 --------
