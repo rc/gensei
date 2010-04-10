@@ -12,7 +12,9 @@ from gensei.utils import get_suffix
 axis_map = {'x' : [1, 2, 0], 'y' : [2, 0, 1], 'z' : [0, 1, 2]}
 
 def get_points(box):
-    # All points in the block.
+    """
+    All points in the block.
+    """
     for axis, num in ordered_iteritems(box.n_slice):
         am = axis_map[axis]
 
@@ -36,9 +38,11 @@ def get_points(box):
         yield pb, points, delta, num, axis, am
 
 def generate_slices(objects, box, options, output_filename_trunk):
-    # Save images of the specimen slices along the z axis of the block. Each
-    # image displays a planar cut plane of the block intersecting the
-    # ellipsoids.
+    """
+    Save images of the specimen slices along the specified axes of the
+    block. Each image displays a planar cut plane of the block intersecting the
+    ellipsoids.
+    """
     resolution = box.resolution
 
     imshape = resolution[::-1] + (3,)
@@ -178,7 +182,7 @@ help = {
     'n_object' :
     'number of objects [default: %s]' % defaults['n_object'],
     'timeout' :
-    'timeout in seconds for attempts to place more ellipsiods into '\
+    'timeout in seconds for attempts to place more ellipsoids into '\
     'the block [default: %s]' % defaults['timeout'],
     'no_pauses' :
     'do not wait for a key press between fitting, generation and slicing '\
