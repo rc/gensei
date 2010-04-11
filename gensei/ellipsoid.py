@@ -30,6 +30,7 @@ class Ellipsoid(SingleObject):
         self.semiaxes = np.array(semiaxes, dtype=np.float64)
         self.volume = 4.0 / 3.0 * np.pi * np.prod(self.semiaxes)
         self.surface = self.compute_approximate_surface()
+        self.length = self.semiaxes.max()
         self.mtx0 = np.diag(1.0 / (self.semiaxes**2))
         self.is_placed = False
         self.intersection_counters = {}

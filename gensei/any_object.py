@@ -51,6 +51,14 @@ class AnyObject(Object):
         """
         self.conf.n_object += 1
 
+    def update_stats(self, stats):
+        """
+        Add the object volume, surface and length to global statistics.
+        """
+        stats.volume += self.volume
+        stats.surface += self.surface
+        stats.length += self.length
+
     def init_intersection_counters(self, axis):
         """Initialize for using store_intersection()."""
         self.intersection_counters[axis] = []

@@ -106,7 +106,7 @@ class Objects(Object, dict):
         for key in self.names:
             obj_class = self[key]
 
-            stats = Object(volume=0.0, surface=0.0)
+            stats = Object(volume=0.0, surface=0.0, length=0.0)
             stats_per_class[key] = stats
             
             for ii in xrange(self.n_object_requested[key]):
@@ -148,14 +148,13 @@ class Objects(Object, dict):
 
                 if ok:
                     output('accepted:', obj)
+                    obj_class.accepted()
 
                     obj.name = key.replace('class', 'object') + ('_%d' % ii)
                     objs[key + ' ' + obj.name] = obj
 
-                    stats.volume += obj.volume
-                    stats.surface += obj.surface
+                    obj.update_stats(stats)
 
-                    obj_class.accepted()
                 else:
                     break
 
@@ -166,10 +165,11 @@ class Objects(Object, dict):
             # This was updated in obj_class.accepted() call above.
             objs.n_object[key] = obj_class.conf.n_object
 
-        object_volume = object_surface = 0.0
+        object_volume = object_surface = object_length = 0.0
         for stats in stats_per_class.itervalues():
             object_volume += stats.volume
             object_surface += stats.surface
+            object_length += stats.length
 
         objs.stats_per_class = stats_per_class
         objs.init_trait('total_object_volume', object_volume)
@@ -178,6 +178,9 @@ class Objects(Object, dict):
         objs.init_trait('total_object_surface', object_surface)
         objs.init_trait('total_object_surface_fraction',
                         object_surface / box.volume)
+        objs.init_trait('total_object_length', object_length)
+        objs.init_trait('total_object_length_density',
+                        object_length / box.volume)
         objs.section_volumes = {}
         objs.section_surfaces = {}
 
@@ -285,6 +288,10 @@ class Objects(Object, dict):
                    % (units, self.total_object_surface_fraction))
         msg.append('  total object surface [(%s)^2]:          %f' \
                    % (units, self.total_object_surface))
+        msg.append('  total object length density [1/(%s)^2]: %f' \
+                   % (units, self.total_object_length_density))
+        msg.append('  total object length [(%s)]:             %f' \
+                   % (units, self.total_object_length))
         msg.append(_dashes)
 
         msg.append('  missed objects per axis:')

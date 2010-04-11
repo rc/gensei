@@ -35,6 +35,7 @@ class Cylinder(SingleObject):
         self.length_to_width = 0.5 * height / radius
         self.volume = height * np.pi * (radius**2)
         self.surface = 2.0 * np.pi * radius * height
+        self.length = self.height
         self.mtx0 = self.get_circumscribed_ellipsoid()
         self.is_placed = False
         self.intersection_counters = {}
