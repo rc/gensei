@@ -248,7 +248,6 @@ class Objects(Object, dict):
         surfaces = self.section_surfaces[axis]
         surfaces[obj_class] += circumference * delta
 
-
     def format_intersection_statistics(self, is_output=False):
         if is_output:
             space = ''
@@ -356,10 +355,31 @@ class Objects(Object, dict):
                            % (units, val))
                 msg.append('        true (approximate) surface fraction:    %f' \
                            % (stats.surface / self.box.volume))
-                msg.append('        section surface fraction [[1/(%s)]:     %f' \
+                msg.append('        section surface fraction [1/(%s)]:      %f' \
                            % (units, val / self.box.volume))
                 msg.append('        ratio S2/S1 (accuracy estimate):        %f' \
                            % (val / stats.surface))
+        msg.append(_dashes)
+
+        msg.append('  lengths per class:')
+        for axis, iac in ordered_iteritems(ipac):
+            msg.append('    axis: %s' % axis)
+            for key, n_i in ordered_iteritems(iac):
+                val = 2.0 * n_i /  self.box.get_area(axis) * self.box.volume
+                val /= (self.box.n_slice[axis] - 1)
+
+                stats = self.stats_per_class[key]
+                msg.append('      class: %s' % key)
+                msg.append('        true length L1 [(%s)]:             %f' \
+                           % (units, stats.length))
+                msg.append('        section-based length L2 [(%s)]:    %f' \
+                           % (units, val))
+                msg.append('        true length density [1/(%s)^2]:    %f' \
+                           % (units, stats.length / self.box.volume))
+                msg.append('        section length density [1/(%s)^2]: %f' \
+                           % (units, val / self.box.volume))
+                msg.append('        ratio L2/L1 (accuracy estimate):   %f' \
+                           % (val / stats.length))
         msg.append(_dashes)
 
         msg.append('  circumferences per object:')
