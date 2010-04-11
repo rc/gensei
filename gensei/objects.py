@@ -14,6 +14,8 @@ def reduce_to_fit(obj_conf, box):
 
     while 1:
         obj = AnyObject.from_conf(obj_conf, box)
+        if obj_conf.n_object == 0:
+            break
 
         r = obj.get_radius()
         rbox = 0.5 * box.dims.min()
