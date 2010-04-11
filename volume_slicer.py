@@ -9,34 +9,6 @@ from gensei.base import *
 from gensei import Objects, Box
 from gensei.utils import get_suffix
 
-axis_map = {'x' : [1, 2, 0], 'y' : [2, 0, 1], 'z' : [0, 1, 2]}
-
-def get_points(box):
-    """
-    All points in the block.
-    """
-    for axis, num in ordered_iteritems(box.n_slice):
-        am = axis_map[axis]
-
-        shape = np.array((box.resolution[0], box.resolution[1], num))
-        pb = np.zeros((3,), dtype=np.object)
-        for ii in range(3):
-            pb[am[ii]] = np.linspace(0, box.dims[ii], shape[ii])
-
-        if num > 1:
-            delta = pb[am[2]][1] - pb[am[2]][0]
-        else:
-            delta = 0.0
-        x1, x2 = np.meshgrid(pb[am[0]], pb[am[1]])
-        x1 = x1.ravel()
-        x2 = x2.ravel()
-
-        points = np.empty((x1.shape[0], 3), dtype=np.float64)
-        points[:,am[0]] = x1
-        points[:,am[1]] = x2
-
-        yield pb, points, delta, num, axis, am
-
 def generate_slices(objects, box, options, output_filename_trunk):
     """
     Save images of the specimen slices along the specified axes of the
@@ -52,7 +24,7 @@ def generate_slices(objects, box, options, output_filename_trunk):
 
     objects.init_section_based_data()
     objects.points = []
-    for pb, points, delta, n_slice, axis, am in get_points(box):
+    for pb, points, delta, n_slice, axis, am in box.get_points():
         suffix = get_suffix(n_slice)
 
         # dpi=dpi in plt.figure() messes with figsize... ???
