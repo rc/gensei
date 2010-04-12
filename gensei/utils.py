@@ -15,6 +15,19 @@ def get_random(ranges0, ranges1):
     ranges0 = np.atleast_1d(ranges0)
     return (ranges1 - ranges0) * np.random.random(len(ranges0)) + ranges0
 
+def get_random_direction(dim):
+    """
+    Get a uniform random direction in unit ball of dimension `dim`. 
+    """
+    while 1:
+        coor = np.random.normal(0.0, 1.0, size=dim)
+        r = np.linalg.norm(coor)
+        if (r <= 1.0) and (r > 1e-5) :
+            break
+    out = coor / r
+
+    return out
+
 def evaluate(val, shape=None):
     """
     Evaluate a single value or a sequence of values.
@@ -29,10 +42,14 @@ def evaluate(val, shape=None):
 
         - list: evaluate() is called recursively for each item
         - tuple:
-            - ('random', [min. values], [max. values]) (uniform)
-            - ('random', min. value, max. value)
-            - ('normal', mean, standard deviation)
+            - ('random', [`min. values`], [`max. values`]) (uniform)
+            - ('random', `min. value`, `max. value`)
+            - ('normal', `mean`, `standard deviation`)
+            - ('random direction', `dim`) : uniform distribution of unit vectors
+              in dimension `dim`
         - 'random' : random value(s) in [0, 1)
+        - 'random direction' : uniform distribution of unit vectors
+              in dimension 3
         - other values are returned as they are.
     shape : tuple, optional
         Shape of the data when `val` is 'random'.
@@ -59,12 +76,18 @@ def evaluate(val, shape=None):
             else:
                 out = (val[2] - val[1]) * np.random.random() + val[1]
 
+        elif val[0] == 'random direction':
+            out = get_random_direction(val[1])
+
         else:
             raise ValueError('unsupported value type! (%s)' % val[0])
 
     elif val == 'random':
         out = np.random.random(shape)
 
+    elif val == 'random direction':
+        out = get_random_direction(3)
+        
     else:
         out = val
 
