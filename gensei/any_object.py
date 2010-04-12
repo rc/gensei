@@ -33,15 +33,50 @@ class AnyObject(Object):
 
     def setup_orientation(self):
         """
-        Sets rot_axis, the direction vector of rotation axis defining the
-        orientation in space, and rot_angle, the rotation angle around the
-        rotation axis according to self.conf.
+        If `direction` (orientation of the long axis of an object in space) is
+        set in `self.conf`, compute the corresponding `rot_axis` (the direction
+        vector of rotation axis) and `rot_angle` (the rotation angle around the
+        rotation axis), that map the unrotated object (with `direction0`
+        orientation) to the rotated one.
+
+        From `rot_axis` and `rot_angle` form the rotation matrix
+        `rot_mtx`, so that:
+
+          - `direction = dot(rot_mtx.T, direction0)`
+          - `direction0 = dot(rot_mtx, direction)`
+
+        If `direction` is not set in `self.conf`, use `rot_axis` and
+        `rot_angle` from `self.conf`, and compute the `direction` using the
+        above relation.
         """
-        self.rot_axis = evaluate(self.conf.rot_axis, shape=(3,))
-        self.rot_angle = evaluate(self.conf.rot_angle)
+        if hasattr(self.conf, 'direction'):
+            nn = np.linalg.norm
+            self.direction = evaluate(self.conf.direction, shape=(3,))
+
+            rd = np.dot(self.direction0, self.direction)
+            
+            self.rot_angle = np.arccos(rd / (nn(self.direction)
+                                             * nn(self.direction0)))
+
+            direction = self.direction
+            while 1:
+                self.rot_axis = np.cross(self.direction0, direction)
+                ra = np.linalg.norm(self.rot_axis)
+                if ra > 1e-5:
+                    break
+                direction = evaluate('random', shape=(3,))
+
+            self.rot_axis /= ra
+
+        else:
+            self.rot_axis = evaluate(self.conf.rot_axis, shape=(3,))
+            self.rot_angle = evaluate(self.conf.rot_angle)
 
         self.rot_mtx = gm.make_axis_rotation_matrix(self.rot_axis,
                                                     self.rot_angle)
+
+        if not hasattr(self.conf, 'direction'):
+            self.direction = np.dot(self.rot_mtx.T, self.direction0)
 
     def accepted(self):
         """

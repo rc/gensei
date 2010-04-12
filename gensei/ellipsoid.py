@@ -8,6 +8,7 @@ class Ellipsoid(SingleObject):
     traits = {
         'semiaxes' : '%s',
         'centre' : '%s',
+        'direction' : '%s',
         'rot_axis' : '%s',
         'rot_angle' : ('%.2f', lambda x: x * 180.0 / np.pi),
     }
@@ -28,10 +29,15 @@ class Ellipsoid(SingleObject):
                 The semiaxes a, b, c of the ellipsoid.
         """
         self.semiaxes = np.array(semiaxes, dtype=np.float64)
+        self.mtx0 = np.diag(1.0 / (self.semiaxes**2))
+
+        im = self.semiaxes.argmax()
+        self.direction0 = np.eye(3, dtype=np.float64)[im]
+
         self.volume = 4.0 / 3.0 * np.pi * np.prod(self.semiaxes)
         self.surface = self.compute_approximate_surface()
-        self.length = self.semiaxes.max()
-        self.mtx0 = np.diag(1.0 / (self.semiaxes**2))
+        self.length = self.semiaxes[im]
+
         self.is_placed = False
         self.intersection_counters = {}
         self.intersector = EllipsoidIntersector()

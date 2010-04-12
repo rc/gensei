@@ -110,8 +110,7 @@ default_objects = {
         'length_to_width' : defaults['length_to_width'],
         'reduce_to_fit' : {'fraction' : defaults['fraction_reduction']},
         'centre' : 'random',
-        'rot_axis' : 'random',
-        'rot_angle': 'random',
+        'direction' : 'random direction',
     },
 }
 

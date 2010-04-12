@@ -9,6 +9,7 @@ class Cylinder(SingleObject):
         'radius' : '%s',
         'height' : '%s',
         'centre' : '%s',
+        'direction' : '%s',
         'rot_axis' : '%s',
         'rot_angle' : ('%.2f', lambda x: x * 180.0 / np.pi),
     }
@@ -33,10 +34,15 @@ class Cylinder(SingleObject):
         self.radius = radius
         self.height = height
         self.length_to_width = 0.5 * height / radius
+
+        self.mtx0 = self.get_circumscribed_ellipsoid()
+
+        self.direction0 = np.array([0.0, 0.0, 1.0], dtype=np.float64)
+
         self.volume = height * np.pi * (radius**2)
         self.surface = 2.0 * np.pi * radius * height
         self.length = self.height
-        self.mtx0 = self.get_circumscribed_ellipsoid()
+
         self.is_placed = False
         self.intersection_counters = {}
         self.intersector = EllipsoidIntersector()
