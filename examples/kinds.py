@@ -1,5 +1,5 @@
 """
-Demonstration of using all several kinds of objects.
+Demonstration of using several kinds of objects.
 """
 import numpy as np
 
@@ -12,19 +12,19 @@ objects = {
         'length_to_width' : 2.0,
         'reduce_to_fit' : {'length_to_width' : 0.9},
         'centre' : 'random',
-        'rot_axis' : ('random', [0.0, 0.0, 0.0], [1.0, 1.0, 1.0]),
-        'rot_angle': 'random',
+        # Ellipsoids should be approximately aligned with the x axis.
+        'rot_axis': [('normal', 0.0, 0.1), 1.0, ('random', -0.2, 0.2)],
+        'rot_angle': np.pi/2,
     },
     'class 2' : {
         'kind' : 'cylinder',
         'color' : (0.1, 0.2, 0.7),
-        'fraction' : 0.05,
-        'length_to_width' : 15.0,
+        'fraction' : 0.01,
+        'length_to_width' : 40.0,
         'reduce_to_fit' : {'fraction' : 0.9},
         'centre' : 'random',
-        # Cylinders should be approximately aligned with the x axis.
-        'rot_axis': [('normal', 0.0, 0.1), 1.0, ('random', -0.2, 0.2)],
-        'rot_angle': np.pi/2,
+        # Cylinders should have uniform random distribution of directions. 
+        'direction' : 'random direction',
     },
 }
 #--------End of settings of the properties of objects-----------
@@ -39,11 +39,10 @@ box = {
     'resolution' : (300, 300),
     # number of objects to be generated within the box, either a number, or a
     # per class dictionary, for example:
-    'n_object' : {'class 1' : 40, 'class 2' : 10},
+    'n_object' : {'class 1' : 10, 'class 2' : 50},
     # number of slices generated - a dictionary of numbers for the
     # directions perpendicular to the Z, X, and Y axis, i.e. in the XY, YZ, and
-    # XY planes, or a single integer:
-    # 'n_slice' : 10, is equivalent to
+    # XY planes, or a single integer.
     'n_slice' : {'z' : 21, 'x' : 21, 'y' : 21},
     }
 #--------End of settings of the properties of objects-----------
