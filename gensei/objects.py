@@ -366,7 +366,7 @@ class Objects(Object, dict):
             msg.append('    axis: %s' % axis)
             for key, n_i in ordered_iteritems(iac):
                 val = 2.0 * n_i /  self.box.get_area(axis) * self.box.volume
-                val /= (self.box.n_slice[axis] - 1)
+                val /= self.box.n_slice[axis]
 
                 stats = self.stats_per_class[key]
                 msg.append('      class: %s' % key)
